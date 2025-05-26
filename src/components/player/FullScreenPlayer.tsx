@@ -83,7 +83,7 @@ export function FullScreenPlayer() {
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/35 to-black/50"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/25 to-black/40"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -123,15 +123,15 @@ export function FullScreenPlayer() {
               "w-full aspect-square relative shadow-2xl rounded-lg overflow-hidden",
               showLyrics 
                 ? "max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl" 
-                : "max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl" // Adjusted max-widths for artwork when lyrics are hidden
+                : "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl" 
             )}> 
             {currentTrack.artworkUrl && (
                 <Image
                     src={currentTrack.artworkUrl}
                     alt={currentTrack.title}
                     fill
-                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 512px" // Slightly adjusted sizes
-                    className="object-contain" // Changed from object-cover
+                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 512px"
+                    className="object-contain rounded-lg" 
                     data-ai-hint={currentTrack.dataAiHint || 'album art'}
                 />
             )}
@@ -154,7 +154,7 @@ export function FullScreenPlayer() {
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
                 className="w-full [&>span>span]:bg-primary-foreground [&>span]:bg-primary-foreground/30"
-                thumbClassName="bg-primary-foreground border-0 shadow-md h-3 w-3 md:h-3.5 md:w-3.5" 
+                thumbClassName="bg-primary-foreground border-0 shadow-md h-3 w-3 md:h-3.5 md:w-3.5 rounded-full ring-offset-transparent focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                 aria-label="Playback progress"
               />
               <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
