@@ -76,14 +76,14 @@ export function FullScreenPlayer() {
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-30 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125" // Increased opacity
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/60 to-black/70"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/60"></div> {/* Reduced overlay opacity */}
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -203,3 +203,4 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
