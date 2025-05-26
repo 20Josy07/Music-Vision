@@ -76,14 +76,14 @@ export function FullScreenPlayer() {
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125" // Increased opacity
+            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125" // Increased opacity further
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/60"></div> {/* Reduced overlay opacity */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/30 to-black/40"></div> {/* Further Reduced overlay opacity */}
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -117,18 +117,20 @@ export function FullScreenPlayer() {
         {/* Art & Controls Column (Left on Desktop/Tablet) */}
         <div className={cn(
             "flex-shrink-0 flex flex-col items-center justify-center md:justify-start pt-0 md:pt-4 lg:pt-8 md:pr-4 lg:pr-8 space-y-4 md:space-y-6",
-            showLyrics ? "w-full md:w-2/5" : "w-full md:w-1/2 lg:w-2/5 mx-auto" // When lyrics hidden, art column can be wider
+            showLyrics ? "w-full md:w-2/5" : "w-full md:w-1/2 lg:w-2/5 mx-auto" 
         )}>
           <div className={cn(
               "w-full aspect-square relative shadow-2xl rounded-lg overflow-hidden",
-              showLyrics ? "max-w-[220px] sm:max-w-xs md:max-w-sm lg:max-w-md" : "max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl"
+              showLyrics 
+                ? "max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl" 
+                : "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl" // Adjusted max-widths for artwork
             )}> 
             {currentTrack.artworkUrl && (
                 <Image
                     src={currentTrack.artworkUrl}
                     alt={currentTrack.title}
                     fill
-                    sizes="(max-width: 768px) 70vw, (max-width: 1024px) 30vw, 400px"
+                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 40vw, 512px" // Adjusted sizes
                     className="object-cover"
                     data-ai-hint={currentTrack.dataAiHint || 'album art'}
                 />
@@ -203,4 +205,3 @@ export function FullScreenPlayer() {
     </div>
   );
 }
-
