@@ -1,21 +1,25 @@
-import type {Metadata} from 'next';
-import {Geist, Geist_Mono} from 'next/font/google';
+
+import type { Metadata } from 'next';
+// Removed Geist fonts to use system default sans-serif as per request.
+// import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
+import { PlayerProvider } from '@/contexts/PlayerContext';
 import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
+// const geistSans = Geist({
+//   variable: '--font-geist-sans',
+//   subsets: ['latin'],
+// });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+// const geistMono = Geist_Mono({
+//   variable: '--font-geist-mono',
+//   subsets: ['latin'],
+// });
 
 export const metadata: Metadata = {
-  title: 'Hex Hub',
-  description: 'Manage and discover harmonious color palettes.',
+  title: 'MusicVerse',
+  description: 'Your universe of music.',
 };
 
 export default function RootLayout({
@@ -24,10 +28,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster />
+    <html lang="en" suppressHydrationWarning>
+      {/* Removed geistSans.variable and geistMono.variable from body className */}
+      <body className="antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark" // Defaulting to dark theme as per Apple Music style
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PlayerProvider>
+            {children}
+            <Toaster />
+          </PlayerProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
