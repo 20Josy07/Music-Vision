@@ -1,4 +1,3 @@
-import { config } from 'dotenv';
-config();
 
-import '@/ai/flows/next-song-recommendation.ts';
+// Flows will be imported for their side effects in this file.
+import './flows/fetch-lyrics-flow';

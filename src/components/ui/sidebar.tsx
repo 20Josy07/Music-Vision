@@ -1,6 +1,8 @@
+
 "use client"
 
 import * as React from "react"
+import Link from "next/link" // Added import for Next.js Link
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
@@ -10,7 +12,11 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -206,6 +212,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <SheetTitle className="sr-only">Main Navigation</SheetTitle> 
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -533,12 +540,14 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
+// Updated SidebarMenuButton to handle href for navigation
 const SidebarMenuButton = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    asChild?: boolean
-    isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
+  HTMLButtonElement, // Ref type might need to be more generic if Link is used. For simplicity, keeping as HTMLButtonElement.
+  React.ComponentProps<"button"> & { // Base props from button
+    asChild?: boolean;
+    isActive?: boolean;
+    href?: string; // Added href prop
+    tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -549,48 +558,52 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      href, // Destructure href
+      children,
       ...props
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button"
-    const { isMobile, state } = useSidebar()
+    // Determine the component: Slot if asChild, Link if href, else button
+    const MenuButtonComp = asChild ? Slot : href ? Link : "button";
+    const { isMobile, state } = useSidebar();
 
-    const button = (
-      <Comp
-        ref={ref}
+    const tooltipContentProps = typeof tooltip === 'string' ? { children: tooltip } : tooltip;
+
+    const buttonElement = (
+      <MenuButtonComp
+        ref={ref as any} // Cast ref as any for polymorphic component
         data-sidebar="menu-button"
         data-size={size}
-        data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
-      />
-    )
+        data-active={String(!!isActive)} // Ensure data-active is string "true" or "false"
+        className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
+        // Conditionally add href if MenuButtonComp is Link and href is provided
+        {...(MenuButtonComp === Link && href ? { href } : {})}
+        {...props} // Spread other props like onClick, type, etc.
+      >
+        {children}
+      </MenuButtonComp>
+    );
 
-    if (!tooltip) {
-      return button
+    if (!tooltipContentProps || (typeof tooltipContentProps === 'object' && Object.keys(tooltipContentProps).length === 0 && !tooltipContentProps.children) ) {
+      return buttonElement;
     }
-
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
-    }
-
+    
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>{buttonElement}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
           hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
+          {...tooltipContentProps}
         />
       </Tooltip>
-    )
+    );
   }
-)
+);
 SidebarMenuButton.displayName = "SidebarMenuButton"
+
 
 const SidebarMenuAction = React.forwardRef<
   HTMLButtonElement,
@@ -706,21 +719,22 @@ const SidebarMenuSubItem = React.forwardRef<
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
 
 const SidebarMenuSubButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<"a"> & {
+  HTMLAnchorElement, // Assuming it will be an anchor if used for navigation
+  React.ComponentProps<"a"> & { // Base props from anchor
     asChild?: boolean
     size?: "sm" | "md"
     isActive?: boolean
+    href?: string; // Added href for Link behavior
   }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+>(({ asChild = false, size = "md", isActive, className, href, children, ...props }, ref) => {
+  const Comp = asChild ? Slot : href ? Link : "a"; // Use Link if href is present, otherwise 'a'
 
   return (
     <Comp
-      ref={ref}
+      ref={ref as any} // Cast ref for polymorphic component
       data-sidebar="menu-sub-button"
       data-size={size}
-      data-active={isActive}
+      data-active={String(!!isActive)}
       className={cn(
         "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
@@ -729,8 +743,11 @@ const SidebarMenuSubButton = React.forwardRef<
         "group-data-[collapsible=icon]:hidden",
         className
       )}
+      {...(Comp === Link && href ? { href } : {})}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   )
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
@@ -761,3 +778,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
