@@ -49,6 +49,16 @@ const nextConfig: NextConfig = {
         resourceRegExp: /^@opentelemetry\/exporter-jaeger$/,
       })
     );
+
+    // Suppress specific warnings from dependencies
+    if (!config.ignoreWarnings) {
+      config.ignoreWarnings = [];
+    }
+    config.ignoreWarnings.push({
+      module: /node_modules\/handlebars\/lib\/index\.js$/,
+      message: /require\.extensions is not supported by webpack/,
+    });
+
     return config;
   },
 };
