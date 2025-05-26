@@ -62,7 +62,7 @@ export function AppShell({ children }: AppShellProps) {
     <>
       <Sidebar collapsible="icon" side="left" variant="sidebar" className="border-r border-sidebar-border group/sidebar">
         <SidebarHeader className="p-4 border-b border-sidebar-border flex justify-between items-center flex-nowrap">
-          <AppLogo className="min-w-0" />
+          <AppLogo className="min-w-0" showName={false} />
           {!isMobile && <SidebarTrigger className="flex-shrink-0" />} 
         </SidebarHeader>
         <SidebarContent className="p-0"> 
