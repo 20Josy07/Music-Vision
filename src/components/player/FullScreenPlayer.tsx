@@ -83,7 +83,7 @@ export function FullScreenPlayer() {
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/25 to-black/40"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/20 to-black/30"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -154,7 +154,7 @@ export function FullScreenPlayer() {
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
                 className="w-full [&>span>span]:bg-primary-foreground [&>span]:bg-primary-foreground/30"
-                thumbClassName="bg-primary-foreground border-0 shadow-md h-3 w-3 md:h-3.5 md:w-3.5 rounded-full ring-offset-transparent focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                thumbClassName="block bg-primary-foreground border-0 h-4 w-4 rounded-full shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 aria-label="Playback progress"
               />
               <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
