@@ -76,14 +76,14 @@ export function FullScreenPlayer() {
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125" // Increased opacity further
+            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/30 to-black/40"></div> {/* Further Reduced overlay opacity */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/35 to-black/50"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -123,15 +123,15 @@ export function FullScreenPlayer() {
               "w-full aspect-square relative shadow-2xl rounded-lg overflow-hidden",
               showLyrics 
                 ? "max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl" 
-                : "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl" // Adjusted max-widths for artwork
+                : "max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl" // Adjusted max-widths for artwork when lyrics are hidden
             )}> 
             {currentTrack.artworkUrl && (
                 <Image
                     src={currentTrack.artworkUrl}
                     alt={currentTrack.title}
                     fill
-                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 40vw, 512px" // Adjusted sizes
-                    className="object-cover"
+                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 512px" // Slightly adjusted sizes
+                    className="object-contain" // Changed from object-cover
                     data-ai-hint={currentTrack.dataAiHint || 'album art'}
                 />
             )}
@@ -205,3 +205,4 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
