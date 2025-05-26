@@ -67,12 +67,12 @@ export function FullScreenPlayer() {
 
   return (
     <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-between transition-all duration-300 ease-in-out text-primary-foreground overflow-hidden">
-      {/* Static Blurred & Vibrant Background */}
+      {/* Dynamic Blurred & Vibrant Background from current track artwork */}
       {currentTrack.artworkUrl && (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
             <Image
             src={currentTrack.artworkUrl}
-            alt="Blurred background"
+            alt="Blurred background artwork"
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
@@ -82,7 +82,7 @@ export function FullScreenPlayer() {
             />
         </div>
       )}
-      {/* Darker Gradient Overlay */}
+      {/* Darker Gradient Overlay for readability */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/80 to-black/90"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
