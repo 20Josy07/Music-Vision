@@ -22,13 +22,13 @@ function getPathTitle(path: string): string {
   if (path === '/search') return 'Search';
   if (path === '/queue') return 'Playback Queue';
   if (path === '/settings') return 'Settings';
-  return 'MusicVerse'; // Default or for home page if it's different from /browse
+  return 'MusicVision'; // Default or for home page if it's different from /browse
 }
 
 
 export function Header() {
   const pathname = usePathname();
-  const [title, setTitle] = useState('MusicVerse');
+  const [title, setTitle] = useState('MusicVision');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {

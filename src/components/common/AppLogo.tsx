@@ -19,7 +19,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ className, iconSize = 24, text
           "font-bold text-foreground truncate group-data-[collapsible=icon]/sidebar:hidden",
           textSize
         )}>
-          MusicVerse
+          MusicVision
         </span>
       )}
     </div>

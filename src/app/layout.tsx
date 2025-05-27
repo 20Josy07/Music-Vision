@@ -18,8 +18,8 @@ import { Toaster } from "@/components/ui/toaster";
 // });
 
 export const metadata: Metadata = {
-  title: 'MusicVerse',
-  description: 'Your universe of music.',
+  title: 'MusicVision',
+  description: 'Your vision of music.',
 };
 
 export default function RootLayout({
@@ -33,8 +33,8 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark" // Defaulting to dark theme as per Apple Music style
-          enableSystem
+          defaultTheme="dark" // Defaulting to dark theme
+          enableSystem={false} // To enforce dark theme as per screenshot
           disableTransitionOnChange
         >
           <PlayerProvider>
