@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { usePlayer } from "@/contexts/PlayerContext";
 import type { Track } from "@/lib/types";
-import { Play, Pause, MoreHorizontal } from "lucide-react";
+import { Play, Pause, MoreHorizontal, Filter } from "lucide-react"; // Added Filter icon
 import Image from "next/image";
 
 const mockSongs: Track[] = [
@@ -28,7 +28,10 @@ export default function SongsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-semibold text-foreground">All Songs</h1>
-        <Button>Filter</Button>
+        <Button variant="outline"> {/* Changed variant for better hierarchy and added icon */}
+          <Filter className="mr-2 h-4 w-4" />
+          Filter
+        </Button>
       </div>
       <div className="space-y-2">
         {mockSongs.map((song) => (
