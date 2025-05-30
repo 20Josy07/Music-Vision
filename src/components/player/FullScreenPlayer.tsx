@@ -76,14 +76,14 @@ export function FullScreenPlayer() {
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-30 blur-3xl scale-125 saturate-150 contrast-125"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/20 to-black/30"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/50 to-black/70"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -140,63 +140,64 @@ export function FullScreenPlayer() {
           <div className={cn("w-full max-w-md px-2 md:px-0", !showLyrics ? "text-center" : "text-center md:text-left")}>
             <div className="flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0">
                 <div className={cn("min-w-0 flex-1", !showLyrics ? "text-center" : "text-center md:text-left")}>
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold truncate text-primary-foreground">{currentTrack.title}</h2>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl truncate text-primary-foreground">{currentTrack.title}</h2>
                     <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
                 </div>
             </div>
 
+            {/* Waveform Visualizer Placeholder */}
+            <div className="waveform-container my-3 md:my-4">
+              {[...Array(7)].map((_, i) => (
+                <div
+                  key={i}
+                  className="waveform-bar"
+                  style={{ animationDelay: `${Math.random() * 0.5}s`, animationDuration: `${0.8 + Math.random() * 0.7}s` }}
+                />
+              ))}
+            </div>
+
             <div className="flex items-center gap-2 w-full mb-2 md:mb-3">
-              <span className="text-xs text-primary-foreground/60 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+              <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
               <Slider
                 value={[displayProgress]}
                 max={1}
                 step={0.01}
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
-                className="w-full"
-                thumbClassName="bg-primary-foreground h-5 w-5 filter drop-shadow-sm"
+                className="w-full [&>span]:bg-muted/70 [&>span>span]:bg-primary-foreground"
+                thumbClassName="bg-primary-foreground h-4 w-4 block"
                 aria-label="Playback progress"
               />
-              <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
-            </div>
-             {/* Waveform Visualizer Placeholder */}
-            <div className="waveform-container my-3 md:my-4">
-              {[...Array(7)].map((_, i) => (
-                <div
-                  key={i}
-                  className="waveform-bar"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
+              <span className="text-xs text-muted-foreground w-10 tabular-nums">{formatTime(totalDuration)}</span>
             </div>
 
             <div className="flex items-center justify-between my-1 md:my-2"> 
               <Button variant="ghost" size="icon" onClick={toggleShuffle} 
                 className={cn(
-                  "text-primary-foreground/60 hover:text-primary-foreground h-9 w-9 sm:h-10 sm:w-10", 
-                  shuffle && "text-primary"
+                  "h-9 w-9 sm:h-10 sm:w-10", 
+                  shuffle ? "text-primary" : "text-muted-foreground hover:text-primary-foreground/80"
                 )}>
-                <Shuffle className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" />
+                <Shuffle className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="sr-only">Shuffle</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={playPrevious} className="text-primary-foreground/60 hover:text-primary-foreground h-10 w-10 sm:h-12 sm:w-12">
-                <SkipBack className="h-5 w-5 sm:h-6 sm:w-6 fill-current text-primary filter drop-shadow-sm" /> 
+              <Button variant="ghost" size="icon" onClick={playPrevious} className="text-muted-foreground hover:text-primary-foreground/80 h-10 w-10 sm:h-12 sm:w-12">
+                <SkipBack className="h-6 w-6 sm:h-7 sm:w-7 fill-current" /> 
                  <span className="sr-only">Previous</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground">
-                {isPlaying ? <Pause className="h-6 w-6 sm:h-7 sm:w-7 fill-current filter drop-shadow-sm" /> : <Play className="h-6 w-6 sm:h-7 sm:w-7 fill-current filter drop-shadow-sm" />}
+              <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-12 w-12 sm:h-14 sm:w-14 rounded-full text-primary-foreground hover:bg-primary-foreground/10">
+                {isPlaying ? <Pause className="h-8 w-8 sm:h-10 sm:w-10 fill-current" /> : <Play className="h-8 w-8 sm:h-10 sm:w-10 fill-current" />}
                  <span className="sr-only">{isPlaying ? 'Pause' : 'Play'}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={playNext} className="text-primary-foreground/60 hover:text-primary-foreground h-10 w-10 sm:h-12 sm:w-12">
-                <SkipForward className="h-5 w-5 sm:h-6 sm:w-6 fill-current text-primary filter drop-shadow-sm" />
+              <Button variant="ghost" size="icon" onClick={playNext} className="text-muted-foreground hover:text-primary-foreground/80 h-10 w-10 sm:h-12 sm:w-12">
+                <SkipForward className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />
                  <span className="sr-only">Next</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={cycleRepeatMode} 
                 className={cn(
-                  "text-primary-foreground/60 hover:text-primary-foreground h-9 w-9 sm:h-10 sm:w-10", 
-                  (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary"
+                  "h-9 w-9 sm:h-10 sm:w-10", 
+                  (repeatMode !== 'none' && repeatMode !== 'off') ? "text-primary" : "text-muted-foreground hover:text-primary-foreground/80"
                 )}>
-                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" /> : <Repeat className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" />}
+                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-4 w-4 sm:h-5 sm:w-5" /> : <Repeat className="h-4 w-4 sm:h-5 sm:w-5" />}
                  <span className="sr-only">Repeat</span>
               </Button>
             </div>
