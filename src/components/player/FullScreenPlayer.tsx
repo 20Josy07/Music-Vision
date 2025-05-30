@@ -76,14 +76,14 @@ export function FullScreenPlayer() {
             fill 
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-30 blur-3xl scale-125 saturate-150 contrast-125"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/20 to-black/30"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/40 to-black/50"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
@@ -140,7 +140,7 @@ export function FullScreenPlayer() {
           <div className="w-full max-w-md text-center md:text-left px-2 md:px-0">
             <div className="flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0">
                 <div className="min-w-0 flex-1 text-center md:text-left">
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold truncate text-primary-foreground">{currentTrack.title}</h2>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl truncate text-primary-foreground">{currentTrack.title}</h2>
                     <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
                 </div>
             </div>
@@ -153,11 +153,21 @@ export function FullScreenPlayer() {
                 step={0.01}
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
-                className="w-full [&>span>span]:bg-primary-foreground [&>span]:bg-primary-foreground/30"
-                thumbClassName="block bg-primary-foreground border-0 h-4 w-4 rounded-full shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                className="w-full" /* Removed specific color overrides to use default ShadCN theme colors */
+                thumbClassName="bg-primary-foreground h-5 w-5" /* Thumb is light, default border-primary, default size */
                 aria-label="Playback progress"
               />
               <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
+            </div>
+             {/* Waveform Visualizer Placeholder */}
+            <div className="waveform-container my-3 md:my-4">
+              {[...Array(7)].map((_, i) => (
+                <div
+                  key={i}
+                  className="waveform-bar"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
             </div>
 
             <div className="flex items-center justify-between my-1 md:my-2"> 
@@ -174,7 +184,7 @@ export function FullScreenPlayer() {
                  <span className="sr-only">Previous</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground">
-                {isPlaying ? <Pause className="h-6 w-6 sm:h-7 sm:w-7 fill-current" /> : <Play className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />}
+                {isPlaying ? <Pause className="h-6 w-6 sm:h-7 sm:h-7 fill-current" /> : <Play className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />}
                  <span className="sr-only">{isPlaying ? 'Pause' : 'Play'}</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={playNext} className="text-primary-foreground/60 hover:text-primary-foreground h-10 w-10 sm:h-12 sm:w-12">
@@ -205,3 +215,5 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
+    
