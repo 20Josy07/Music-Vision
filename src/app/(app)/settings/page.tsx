@@ -13,6 +13,7 @@ import type { SpotifyUser } from '@/types/spotify';
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { SpotifyIcon } from "@/components/common/SpotifyIcon";
+import { AppLogo } from "@/components/common/AppLogo"; // Added AppLogo import
 
 
 type MusicSource = "spotify" | "appleMusic" | "tidal" | "local";
