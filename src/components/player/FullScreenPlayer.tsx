@@ -137,16 +137,9 @@ export function FullScreenPlayer() {
             )}
           </div>
           
-          <div className={cn(
-              "w-full max-w-md px-2 md:px-0",
-              !showLyrics ? "text-center" : "text-center md:text-left"
-            )}>
-            <div className={cn(
-                "flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0"
-              )}>
-                <div className={cn(
-                    "min-w-0 flex-1"
-                  )}>
+          <div className={cn("w-full max-w-md px-2 md:px-0", !showLyrics ? "text-center" : "text-center md:text-left")}>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0">
+                <div className={cn("min-w-0 flex-1", !showLyrics ? "text-center" : "text-center md:text-left")}>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold truncate text-primary-foreground">{currentTrack.title}</h2>
                     <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
                 </div>
@@ -161,7 +154,7 @@ export function FullScreenPlayer() {
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
                 className="w-full"
-                thumbClassName="bg-primary-foreground h-5 w-5"
+                thumbClassName="bg-primary-foreground h-5 w-5 filter drop-shadow-sm"
                 aria-label="Playback progress"
               />
               <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
@@ -183,19 +176,19 @@ export function FullScreenPlayer() {
                   "text-primary-foreground/60 hover:text-primary-foreground h-9 w-9 sm:h-10 sm:w-10", 
                   shuffle && "text-primary"
                 )}>
-                <Shuffle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Shuffle className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" />
                 <span className="sr-only">Shuffle</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={playPrevious} className="text-primary-foreground/60 hover:text-primary-foreground h-10 w-10 sm:h-12 sm:w-12">
-                <SkipBack className="h-5 w-5 sm:h-6 sm:w-6 fill-current" /> 
+                <SkipBack className="h-5 w-5 sm:h-6 sm:w-6 fill-current text-primary filter drop-shadow-sm" /> 
                  <span className="sr-only">Previous</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground">
-                {isPlaying ? <Pause className="h-6 w-6 sm:h-7 sm:w-7 fill-current" /> : <Play className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />}
+                {isPlaying ? <Pause className="h-6 w-6 sm:h-7 sm:w-7 fill-current filter drop-shadow-sm" /> : <Play className="h-6 w-6 sm:h-7 sm:w-7 fill-current filter drop-shadow-sm" />}
                  <span className="sr-only">{isPlaying ? 'Pause' : 'Play'}</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={playNext} className="text-primary-foreground/60 hover:text-primary-foreground h-10 w-10 sm:h-12 sm:w-12">
-                <SkipForward className="h-5 w-5 sm:h-6 sm:w-6 fill-current" />
+                <SkipForward className="h-5 w-5 sm:h-6 sm:w-6 fill-current text-primary filter drop-shadow-sm" />
                  <span className="sr-only">Next</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={cycleRepeatMode} 
@@ -203,7 +196,7 @@ export function FullScreenPlayer() {
                   "text-primary-foreground/60 hover:text-primary-foreground h-9 w-9 sm:h-10 sm:w-10", 
                   (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary"
                 )}>
-                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-4 w-4 sm:h-5 sm:w-5" /> : <Repeat className="h-4 w-4 sm:h-5 sm:w-5" />}
+                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" /> : <Repeat className="h-4 w-4 sm:h-5 sm:w-5 text-primary filter drop-shadow-sm" />}
                  <span className="sr-only">Repeat</span>
               </Button>
             </div>
@@ -222,3 +215,5 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
+    
