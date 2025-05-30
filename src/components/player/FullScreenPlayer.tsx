@@ -42,7 +42,7 @@ export function FullScreenPlayer() {
       setDisplayProgress(playbackProgress);
     }
   }, [playbackProgress, isSeeking]);
-  
+
   const handleSeekCommit = (value: number[]) => {
     seek(value[0]);
     setIsSeeking(false);
@@ -73,43 +73,43 @@ export function FullScreenPlayer() {
             <Image
             src={currentTrack.artworkUrl}
             alt="Blurred background artwork"
-            fill 
+            fill
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-60 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
             />
         </div>
       )}
       {/* Darker Gradient Overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/15 via-black/20 to-black/30"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/30 to-black/40"></div>
 
       {/* Header with Close Button & Lyrics Toggle */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 md:p-6">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleFullScreenPlayer} 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleFullScreenPlayer}
           className="text-primary-foreground/60 hover:text-primary-foreground"
           aria-label="Close Full Screen Player"
         >
           <X className="h-7 w-7" />
         </Button>
-        <Button 
-            variant="ghost" 
-            size="icon" 
+        <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleLyricsVisibility}
             className={cn(
                 "text-primary-foreground/60 hover:text-primary-foreground",
-                showLyrics && "text-primary" 
+                showLyrics && "text-primary"
             )}
             aria-label={showLyrics ? "Hide Lyrics" : "Show Lyrics"}
         >
             <MessageSquare className="h-6 w-6" />
         </Button>
       </div>
-      
+
       {/* Main Content Area (Art/Controls + Lyrics) */}
       <div className={cn(
           "relative z-10 flex flex-col md:flex-row flex-grow w-full max-w-7xl mx-auto items-stretch overflow-hidden px-4 md:px-6 lg:px-8 pb-4 md:pb-6",
@@ -117,26 +117,26 @@ export function FullScreenPlayer() {
         {/* Art & Controls Column (Left on Desktop/Tablet) */}
         <div className={cn(
             "flex-shrink-0 flex flex-col items-center justify-center md:justify-start pt-0 md:pt-4 lg:pt-8 md:pr-4 lg:pr-8 space-y-4 md:space-y-6",
-            showLyrics ? "w-full md:w-2/5" : "w-full md:w-1/2 lg:w-2/5 mx-auto" 
+            showLyrics ? "w-full md:w-2/5" : "w-full md:w-1/2 lg:w-2/5 mx-auto"
         )}>
           <div className={cn(
               "w-full aspect-square relative shadow-2xl rounded-lg overflow-hidden",
-              showLyrics 
-                ? "max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl" 
-                : "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl" 
-            )}> 
+              showLyrics
+                ? "max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl"
+                : "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
+            )}>
             {currentTrack.artworkUrl && (
                 <Image
                     src={currentTrack.artworkUrl}
                     alt={currentTrack.title}
                     fill
                     sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 512px"
-                    className="object-contain rounded-lg" 
+                    className="object-contain"
                     data-ai-hint={currentTrack.dataAiHint || 'album art'}
                 />
             )}
           </div>
-          
+
           <div className={cn("w-full max-w-md px-2 md:px-0", !showLyrics ? "text-center" : "text-center md:text-left")}>
             <div className={cn("min-w-0 flex-1 mb-2 md:mb-3", !showLyrics ? "text-center" : "text-center md:text-left")}>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl truncate text-primary-foreground">{currentTrack.title}</h2>
@@ -144,12 +144,12 @@ export function FullScreenPlayer() {
             </div>
 
             {/* Waveform Animation */}
-            <div className="waveform-container my-3 md:my-4">
+             <div className="waveform-container my-3 md:my-4">
               {[...Array(7)].map((_, i) => (
                 <div
                   key={i}
                   className="waveform-bar"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+                  style={{ animationDelay: `${i * 0.15}s` }}
                 />
               ))}
             </div>
@@ -169,17 +169,17 @@ export function FullScreenPlayer() {
               <span className="text-xs text-primary-foreground w-10 tabular-nums">-{formatTime(Math.max(0, totalDuration - currentTime))}</span>
             </div>
 
-            <div className="flex items-center justify-between my-1 md:my-2"> 
-              <Button variant="ghost" size="icon" onClick={toggleShuffle} 
+            <div className="flex items-center justify-between my-1 md:my-2">
+              <Button variant="ghost" size="icon" onClick={toggleShuffle}
                 className={cn(
-                  "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10", 
+                  "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10",
                   shuffle && "text-primary"
                 )}>
                 <Shuffle className="h-5 w-5 sm:h-5 sm:w-5" />
                 <span className="sr-only">Shuffle</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={playPrevious} className="text-muted-foreground hover:text-primary-foreground/80 h-10 w-10 sm:h-12 sm:w-12">
-                <SkipBack className="h-6 w-6 sm:h-7 sm:w-7 fill-current" /> 
+                <SkipBack className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />
                  <span className="sr-only">Previous</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-12 w-12 sm:h-14 sm:w-14 rounded-full hover:bg-primary-foreground/10 text-primary-foreground">
@@ -190,9 +190,9 @@ export function FullScreenPlayer() {
                 <SkipForward className="h-6 w-6 sm:h-7 sm:w-7 fill-current" />
                  <span className="sr-only">Next</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={cycleRepeatMode} 
+              <Button variant="ghost" size="icon" onClick={cycleRepeatMode}
                 className={cn(
-                  "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10", 
+                  "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10",
                   (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary"
                 )}>
                 {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-5 w-5 sm:h-5 sm:w-5" /> : <Repeat className="h-5 w-5 sm:h-5 sm:w-5" />}
