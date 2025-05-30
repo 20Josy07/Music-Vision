@@ -141,10 +141,11 @@ export function FullScreenPlayer() {
               "w-full max-w-md px-2 md:px-0",
               !showLyrics ? "text-center" : "text-center md:text-left"
             )}>
-            <div className="flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0">
+            <div className={cn(
+                "flex flex-col md:flex-row justify-between items-center mb-2 md:mb-3 min-w-0"
+              )}>
                 <div className={cn(
-                    "min-w-0 flex-1",
-                    !showLyrics ? "text-center" : "text-center md:text-left"
+                    "min-w-0 flex-1"
                   )}>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold truncate text-primary-foreground">{currentTrack.title}</h2>
                     <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
@@ -159,8 +160,8 @@ export function FullScreenPlayer() {
                 step={0.01}
                 onValueChange={handleProgressChange}
                 onValueCommit={handleSeekCommit}
-                className="w-full [&>span>span]:bg-primary-foreground [&>span]:bg-primary-foreground/30"
-                thumbClassName="block bg-primary-foreground border-0 h-4 w-4 rounded-full shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                className="w-full"
+                thumbClassName="bg-primary-foreground h-5 w-5"
                 aria-label="Playback progress"
               />
               <span className="text-xs text-primary-foreground/60 w-10 tabular-nums">{formatTime(totalDuration)}</span>
