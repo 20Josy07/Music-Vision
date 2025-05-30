@@ -522,7 +522,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
       
-      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1500 : 7000; // Reduced to 1.5s for lyrics
+      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1500 : 50; // Changed 50000 to 50
       syncIntervalRef.current = setInterval(() => syncWithSpotifyPlayback(), interval);
     } else {
         if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
@@ -566,3 +566,4 @@ export const usePlayer = () => {
   }
   return context;
 };
+
