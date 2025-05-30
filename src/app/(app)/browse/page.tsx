@@ -5,14 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import type { Album, Track as AppTrack } from '@/lib/types'; // Renamed to avoid conflict
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlayer } from '@/contexts/PlayerContext';
 // import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"; // Keep if needed for other sections
 import { useEffect, useState } from 'react';
 import { getMyTopTracks } from '@/services/spotifyService';
-import { checkAndSetupToken } from '@/services/spotify';
 import type { SpotifyTrackItem } from '@/types/spotify';
+import { SpotifyIcon } from '@/components/common/SpotifyIcon';
+import { cn } from '@/lib/utils';
+
 
 interface QuickPickItem {
   id: string;
@@ -22,23 +24,25 @@ interface QuickPickItem {
   type: 'album' | 'playlist' | 'track';
   tracks?: AppTrack[];
   track?: AppTrack; // For single track quick picks
+  colorClass?: string; // For specific brand colors
 }
 
 const mockQuickPicks: QuickPickItem[] = [
   { id: 'qp1', title: 'Tus me gusta', artworkUrl: 'https://placehold.co/56x56/7058A3/FFFFFF.png?text=%E2%99%A5', dataAiHint: "liked songs", type: 'playlist', tracks: [
     { id: 's1', title: 'Starry Night (Liked)', artist: 'Cosmic Voyager', album: 'Galactic Dreams', duration: 210, artworkUrl: 'https://placehold.co/50x50/C7254E/FFFFFF.png?text=SN', dataAiHint:"starry night", audioSrc:"/audio/inspiring-emotional-uplifting-piano.mp3" },
-  ]},
+  ], colorClass: 'bg-brand-purple-liked'},
   { id: 'qp2', title: 'Neon Future', artworkUrl: 'https://placehold.co/56x56/C7254E/FFFFFF.png?text=NF', dataAiHint: "synthwave playlist", type: 'album', tracks: [
     { id: 't1', title: 'City Lights', artist: 'Synthwave Dreams', album: 'Neon Future', duration: 180, artworkUrl: 'https://placehold.co/80x80/C7254E/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/synthwave-nostalgia.mp3" },
     { id: 't2', title: 'Retro Drive', artist: 'Synthwave Dreams', album: 'Neon Future', duration: 220, artworkUrl: 'https://placehold.co/80x80/C7254E/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/electronic-background-music.mp3" },
-  ]},
-  { id: 'qp3', title: 'Radio de Imagínate', artworkUrl: 'https://placehold.co/56x56/3B82F6/FFFFFF.png?text=RI', dataAiHint: "radio station", type: 'playlist', tracks: [ /* Empty for now */ ] },
+  ], colorClass: 'bg-brand-red'},
+  { id: 'qp3', title: 'Radio de Imagínate', artworkUrl: 'https://placehold.co/56x56/3B82F6/FFFFFF.png?text=RI', dataAiHint: "radio station", type: 'playlist', tracks: [ /* Empty for now */ ], colorClass: 'bg-brand-blue' },
   { id: 'qp4', title: 'Acoustic Mornings', artworkUrl: 'https://placehold.co/56x56/1A171B/FFFFFF.png?text=AM', dataAiHint: "acoustic guitar", type: 'album', tracks: [
      { id: 'am1', title: 'Sunrise Strum', artist: 'Willow Creek', album: 'Acoustic Mornings', duration: 190, artworkUrl: 'https://placehold.co/80x80/1A171B/FFFFFF.png?text=AM', dataAiHint:"acoustic sunrise", audioSrc:"/audio/inspiring-emotional-uplifting-piano.mp3" },
-  ] },
-  { id: 'qp5', title: 'Made in Medellin', artworkUrl: 'https://placehold.co/56x56/10B981/FFFFFF.png?text=MM', dataAiHint: "latin playlist", type: 'playlist', tracks: [ /* Empty for now */ ] },
+  ], colorClass: 'bg-brand-green' },
+  { id: 'qp5', title: 'Made in Medellin', artworkUrl: 'https://placehold.co/56x56/10B981/FFFFFF.png?text=MM', dataAiHint: "latin playlist", type: 'playlist', tracks: [ /* Empty for now */ ], colorClass: 'bg-brand-teal' },
   { id: 'qp6', title: 'Lo-Fi Beats Single', artworkUrl: 'https://placehold.co/56x56/F97316/FFFFFF.png?text=LB', dataAiHint: "lofi beats", type: 'track', track:
-    { id: 'lofi1', title: 'Chillhop Dreams', artist: 'Lofi Panda', album: 'Beats to Study To', duration: 150, artworkUrl: 'https://placehold.co/50x50/F97316/FFFFFF.png?text=CD', dataAiHint:"lofi chill", audioSrc:"/audio/synthwave-nostalgia.mp3" }
+    { id: 'lofi1', title: 'Chillhop Dreams', artist: 'Lofi Panda', album: 'Beats to Study To', duration: 150, artworkUrl: 'https://placehold.co/50x50/F97316/FFFFFF.png?text=CD', dataAiHint:"lofi chill", audioSrc:"/audio/synthwave-nostalgia.mp3" },
+    colorClass: 'bg-brand-orange'
   },
 ];
 
@@ -210,7 +214,7 @@ export default function BrowsePage() {
               variant={activeFilter === filter ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setActiveFilter(filter)}
-              className={activeFilter === filter ? "bg-card text-foreground font-semibold" : "text-muted-foreground"}
+              className={activeFilter === filter ? "bg-card text-card-foreground font-semibold" : "text-muted-foreground"}
             >
               {filter}
             </Button>
@@ -224,7 +228,6 @@ export default function BrowsePage() {
               if (item.type === 'track' && item.track?.id === currentTrack.id) {
                 isCurrentlyActiveItem = true;
               } else if (item.tracks && item.tracks.some(t => t.id === currentTrack.id) && queue.some(qTrack => item.tracks!.find(iTrack => iTrack.id === qTrack.id))) {
-                 // Check if the current track is part of this quick pick's tracks AND the queue context matches this quick pick
                  const currentContextMatches = queue.length === item.tracks.length && queue.every(qT => item.tracks!.some(iT => iT.id === qT.id));
                  if (currentContextMatches) {
                     isCurrentlyActiveItem = true;
@@ -236,7 +239,10 @@ export default function BrowsePage() {
             return (
               <Card
                 key={item.id}
-                className="flex items-center p-0 bg-card hover:bg-card/80 transition-colors group cursor-pointer relative overflow-hidden rounded-md shadow-sm"
+                className={cn(
+                    "flex items-center p-0 bg-card hover:shadow-lg hover:ring-1 hover:ring-primary/70 transition-all duration-200 group cursor-pointer relative overflow-hidden rounded-md shadow-sm",
+                    item.colorClass && !item.artworkUrl.includes('placehold.co') ? item.colorClass : 'bg-card' // Apply brand color if image is not placeholder
+                )}
                 onClick={() => canPlay && handlePlayItem(item)}
               >
                 <Image src={item.artworkUrl} alt={item.title} width={56} height={56} className="aspect-square object-cover rounded-l-md" data-ai-hint={item.dataAiHint} />
@@ -267,12 +273,14 @@ export default function BrowsePage() {
         </section>
       ) : spotifyError && !isSpotifyConnected ? (
          <section>
-            <Card className="p-4 bg-muted/50 border-border">
-                <CardTitle className="text-foreground text-lg">Connect to Spotify</CardTitle>
+            <Card className="p-4 bg-card/80 border-border/50">
+                <CardTitle className="text-foreground text-lg flex items-center">
+                    <SpotifyIcon className="w-6 h-6 mr-2 text-green-500" /> Connect to Spotify
+                </CardTitle>
                 <CardContent className="text-muted-foreground pt-2 text-sm">
                     <p>{spotifyError}</p>
                     <Link href="/settings" passHref>
-                       <Button variant="link" className="px-0">Go to Settings to connect</Button>
+                       <Button variant="link" className="px-0 text-primary hover:text-primary/80">Go to Settings to connect</Button>
                     </Link>
                 </CardContent>
             </Card>
@@ -289,13 +297,15 @@ export default function BrowsePage() {
       ) : topSpotifyTracks.length > 0 ? (
         <section>
           <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Your Top Spotify Tracks</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center">
+                <SpotifyIcon className="w-7 h-7 mr-2 text-green-500" /> Your Top Spotify Tracks
+              </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-6 sm:gap-y-8">
             {topSpotifyTracks.map((track) => {
                const isCurrentlyActiveItem = track.id === currentTrack?.id;
               return (
-              <Card key={track.id} className="group relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => handlePlayItem(track)}>
+              <Card key={track.id} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => handlePlayItem(track)}>
                   <CardContent className="p-0">
                       <Image
                       src={track.artworkUrl}
@@ -345,7 +355,7 @@ export default function BrowsePage() {
                                            album.tracks.every(aTrack => queue.some(qTrack => qTrack.id === aTrack.id));
              const canPlay = album.tracks && album.tracks.length > 0;
             return (
-            <Card key={album.id} className="group relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(album)}>
+            <Card key={album.id} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(album)}>
                 <CardContent className="p-0">
                     <Image
                     src={album.artworkUrl}
@@ -390,7 +400,7 @@ export default function BrowsePage() {
                                             playlist.tracks.every(pTrack => queue.some(qTrack => qTrack.id === pTrack.id));
              const canPlay = playlist.tracks && playlist.tracks.length > 0;
             return(
-            <Card key={playlist.id} className="group relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(playlist)}>
+            <Card key={playlist.id} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(playlist)}>
               <CardContent className="p-0">
                 <Image
                   src={playlist.artworkUrl}
@@ -435,7 +445,7 @@ export default function BrowsePage() {
                                           album.tracks.every(aTrack => queue.some(qTrack => qTrack.id === aTrack.id));
             const canPlay = album.tracks && album.tracks.length > 0;
             return (
-            <Card key={album.id} className="group relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(album)}>
+            <Card key={album.id} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => canPlay && handlePlayItem(album)}>
               <CardContent className="p-0">
                 <Image
                   src={album.artworkUrl}
@@ -466,6 +476,16 @@ export default function BrowsePage() {
           })}
         </div>
       </section>
+       {/* AI Genkit Badge Placeholder - Bottom Right */}
+      <div className="fixed bottom-28 right-6 md:bottom-6 md:right-6 z-50">
+        <div className="bg-card/70 backdrop-blur-sm text-xs text-muted-foreground px-3 py-1.5 rounded-full shadow-lg border border-border/50 flex items-center gap-1.5">
+            <span>Potenciado por</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12.55 2.755a.5.5 0 0 0-.9 0l-2 4A.5.5 0 0 0 10 7.5h4a.5.5 0 0 0 .35-.855l-2-4Z"/><path d="M17 11h-2a1 1 0 0 0-1 1v2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V12a1 1 0 0 0-1-1Z"/><path d="m7 11-2.5 2.5a1.5 1.5 0 0 0 0 2.121L7 18"/><path d="M14.5 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>
+            <span>Genkit</span>
+        </div>
+      </div>
     </div>
   );
 }
+
+    
