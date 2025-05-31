@@ -139,7 +139,7 @@ export function FullScreenPlayer() {
 
           <div className={cn("w-full max-w-md px-2 md:px-0", !showLyrics ? "text-center" : "text-center md:text-left")}>
             <div className={cn("min-w-0 flex-1 mb-2 md:mb-3", !showLyrics ? "text-center" : "text-center md:text-left")}>
-                <h2 className="text-xl sm:text-2xl lg:text-3xl truncate text-primary-foreground">{currentTrack.title}</h2>
+                <h2 className={cn("text-xl sm:text-2xl lg:text-3xl truncate text-primary-foreground font-bold")}>{currentTrack.title}</h2>
                 <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
             </div>
 
@@ -175,7 +175,7 @@ export function FullScreenPlayer() {
                   "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10",
                   shuffle && "text-primary"
                 )}>
-                <Shuffle className="h-5 w-5 sm:h-5 sm:w-5" />
+                <Shuffle className="h-5 w-5 sm:h-5 sm:w-5 fill-current" />
                 <span className="sr-only">Shuffle</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={playPrevious} className="text-muted-foreground hover:text-primary-foreground/80 h-10 w-10 sm:h-12 sm:w-12">
@@ -195,7 +195,7 @@ export function FullScreenPlayer() {
                   "text-muted-foreground hover:text-primary-foreground/80 h-9 w-9 sm:h-10 sm:w-10",
                   (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary"
                 )}>
-                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-5 w-5 sm:h-5 sm:w-5" /> : <Repeat className="h-5 w-5 sm:h-5 sm:w-5" />}
+                {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-5 w-5 sm:h-5 sm:w-5 fill-current" /> : <Repeat className="h-5 w-5 sm:h-5 sm:w-5 fill-current" />}
                  <span className="sr-only">Repeat</span>
               </Button>
             </div>
@@ -214,3 +214,4 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
