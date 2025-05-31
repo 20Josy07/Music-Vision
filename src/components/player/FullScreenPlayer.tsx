@@ -77,7 +77,7 @@ export function FullScreenPlayer() {
             fill
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-40 blur-3xl saturate-150 contrast-125 animate-subtle-bg-pan-zoom"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
           />
