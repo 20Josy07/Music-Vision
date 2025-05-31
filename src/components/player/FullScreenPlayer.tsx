@@ -71,13 +71,13 @@ export function FullScreenPlayer() {
       {backgroundImageSrc && (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <Image
-            key={backgroundImageSrc} 
+            key={backgroundImageSrc}
             src={backgroundImageSrc}
             alt="Dynamic background artwork"
             fill
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125 animate-hue-cycle"
+            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
           />
@@ -96,7 +96,7 @@ export function FullScreenPlayer() {
           <X className="h-7 w-7" />
         </Button>
         <div className="flex items-center gap-2">
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -151,7 +151,7 @@ export function FullScreenPlayer() {
                     "waveform-bar bg-primary-foreground/60 rounded-full w-1 transition-all duration-300 ease-in-out",
                     isPlaying && "animate-waveform-pulse"
                   )}
-                  style={{ 
+                  style={{
                     height: isPlaying ? `${Math.random() * 75 + 25}%` : '25%',
                     animationDelay: isPlaying ? `${i * 0.05}s` : undefined,
                     opacity: isPlaying ? (Math.random() * 0.5 + 0.5) : 0.6,
@@ -159,7 +159,7 @@ export function FullScreenPlayer() {
                 />
               ))}
             </div>
-            
+
             <style jsx global>{`
               @keyframes waveform-pulse {
                 0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
@@ -225,7 +225,7 @@ export function FullScreenPlayer() {
         {showLyrics && (
           <div className="w-full md:w-3/5 flex-1 flex flex-col overflow-hidden md:pl-4 lg:pl-8 mt-4 md:mt-0">
             <div className="relative flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary-foreground/20 scrollbar-track-transparent">
-              
+
               <LyricsDisplay track={currentTrack} currentTime={currentTime} />
             </div>
           </div>
