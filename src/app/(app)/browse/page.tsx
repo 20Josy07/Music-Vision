@@ -5,35 +5,39 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import type { Album, Track } from '@/lib/types';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { getMyTopTracks } from '@/services/spotifyService';
 import type { SpotifyTrackItem } from '@/types/spotify';
 import { SpotifyIcon } from '@/components/common/SpotifyIcon';
 import { cn } from '@/lib/utils';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 
 interface QuickPickItem {
   id: string;
   title: string;
+  artist?: string; // For "Popular" section to show artist
   artworkUrl: string;
   dataAiHint: string;
   type: 'album' | 'playlist' | 'track';
   tracks?: Track[];
-  track?: Track; 
+  track?: Track;
   colorClass?: string;
 }
 
-const mockQuickPicks: QuickPickItem[] = [
-  { id: 'qp1', title: 'Tus me gusta (Spotify)', artworkUrl: 'https://placehold.co/56x56/7058A3/FFFFFF.png?text=%E2%99%A5', dataAiHint: "liked songs", type: 'playlist', tracks: [], colorClass: 'bg-brand-purple-liked'},
-  { id: 'qp2', title: 'Neon Future Remix', artworkUrl: 'https://placehold.co/56x56/C7254E/FFFFFF.png?text=NF', dataAiHint: "synthwave playlist", type: 'album', tracks: [
-    { id: 't1', title: 'City Lights', artist: 'Synthwave Dreams', album: 'Neon Future Remix', duration: 180, artworkUrl: 'https://placehold.co/80x80/C7254E/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/synthwave-nostalgia.mp3", source: 'local' },
-    { id: 't2', title: 'Retro Drive', artist: 'Synthwave Dreams', album: 'Neon Future Remix', duration: 220, artworkUrl: 'https://placehold.co/80x80/C7254E/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/electronic-background-music.mp3", source: 'local' },
-  ], colorClass: 'bg-brand-red'},
-  { id: 'mockCollectionTrack1', title: 'Inspiring Piano', artworkUrl: 'https://placehold.co/56x56/10B981/FFFFFF.png?text=IP', dataAiHint: "piano music", type: 'track', track: { id: 'local1', title: 'Inspiring Emotional Piano', artist: 'AudioSphere', album: 'Soundscapes', duration: 150, artworkUrl: 'https://placehold.co/80x80/10B981/FFFFFF.png?text=IP', dataAiHint: 'inspiring piano', audioSrc:'/audio/inspiring-emotional-uplifting-piano.mp3', source: 'local'}, colorClass: 'bg-emerald-500' },
-  { id: 'mockCollectionTrack2', title: 'Synthwave Vibes', artworkUrl: 'https://placehold.co/56x56/F2711C/FFFFFF.png?text=SV', dataAiHint: "synthwave track", type: 'track', track: { id: 'local2', title: 'Synthwave Nostalgia', artist: '80s Kid', album: 'Retro Dreams', duration: 185, artworkUrl: 'https://placehold.co/80x80/F2711C/FFFFFF.png?text=SV', dataAiHint: 'synthwave car', audioSrc:'/audio/synthwave-nostalgia.mp3', source: 'local'}, colorClass: 'bg-orange-500' },
+const mockPopularItems: QuickPickItem[] = [
+  { id: 'pop1', title: "That's What I Like", artist: "Bruno Mars", artworkUrl: 'https://placehold.co/150x150/C7254E/FFFFFF.png?text=BM', dataAiHint: "bruno mars pop", type: 'track', track: { id: 'local_bm', title: "That's What I Like", artist: 'Bruno Mars', album: '24K Magic', duration: 210, artworkUrl: 'https://placehold.co/150x150/C7254E/FFFFFF.png?text=BM', dataAiHint: 'bruno mars', audioSrc:'/audio/synthwave-nostalgia.mp3', source: 'local'} },
+  { id: 'pop2', title: "Paris In The Rain", artist: "Lauv", artworkUrl: 'https://placehold.co/150x150/7058A3/FFFFFF.png?text=LV', dataAiHint: "lauv pop", type: 'track', track: { id: 'local_lauv', title: "Paris In The Rain", artist: 'Lauv', album: 'I met you when I was 18.', duration: 180, artworkUrl: 'https://placehold.co/150x150/7058A3/FFFFFF.png?text=LV', dataAiHint: 'lauv paris', audioSrc:'/audio/electronic-background-music.mp3', source: 'local'} },
+  { id: 'pop3', title: "Diamond", artist: "Rihanna", artworkUrl: 'https://placehold.co/150x150/10B981/FFFFFF.png?text=RI', dataAiHint: "rihanna pop", type: 'track', track: { id: 'local_ri', title: "Diamond", artist: 'Rihanna', album: 'Unapologetic', duration: 225, artworkUrl: 'https://placehold.co/150x150/10B981/FFFFFF.png?text=RI', dataAiHint: 'rihanna diamond', audioSrc:'/audio/inspiring-emotional-uplifting-piano.mp3', source: 'local'} },
+  { id: 'pop4', title: "Neon Future Remix", artist: "Synthwave Dreams", artworkUrl: 'https://placehold.co/150x150/F2711C/FFFFFF.png?text=NF', dataAiHint: "synthwave playlist", type: 'album', tracks: [
+    { id: 't1', title: 'City Lights', artist: 'Synthwave Dreams', album: 'Neon Future Remix', duration: 180, artworkUrl: 'https://placehold.co/80x80/F2711C/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/synthwave-nostalgia.mp3", source: 'local' },
+    { id: 't2', title: 'Retro Drive', artist: 'Synthwave Dreams', album: 'Neon Future Remix', duration: 220, artworkUrl: 'https://placehold.co/80x80/F2711C/FFFFFF.png?text=NF', dataAiHint:"neon future", audioSrc:"/audio/electronic-background-music.mp3", source: 'local' },
+  ]},
 ];
 
 const mapSpotifyTrackToAppTrack = (spotifyTrack: SpotifyTrackItem): Track => ({
@@ -42,8 +46,8 @@ const mapSpotifyTrackToAppTrack = (spotifyTrack: SpotifyTrackItem): Track => ({
   artist: spotifyTrack.artists.map(artist => artist.name).join(', '),
   album: spotifyTrack.album.name,
   duration: Math.floor(spotifyTrack.duration_ms / 1000),
-  artworkUrl: spotifyTrack.album.images?.[0]?.url || spotifyTrack.album.images?.[1]?.url || `https://placehold.co/300x300/cccccc/969696.png?text=${encodeURIComponent(spotifyTrack.name.substring(0,2))}`,
-  audioSrc: spotifyTrack.preview_url || undefined, 
+  artworkUrl: spotifyTrack.album.images?.[0]?.url || spotifyTrack.album.images?.[1]?.url || `https://placehold.co/150x150/cccccc/969696.png?text=${encodeURIComponent(spotifyTrack.name.substring(0,2))}`,
+  audioSrc: spotifyTrack.preview_url || undefined,
   spotifyUri: spotifyTrack.uri,
   isSpotifyTrack: true,
   source: 'spotify',
@@ -53,19 +57,13 @@ const mapSpotifyTrackToAppTrack = (spotifyTrack: SpotifyTrackItem): Track => ({
 
 export default function BrowsePage() {
   const { playTrack, playPlaylist, togglePlayPause, currentTrack, isPlaying, queue, isSpotifyConnected } = usePlayer();
-  const [greeting, setGreeting] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Todo');
-  
   const [topSpotifyTracks, setTopSpotifyTracks] = useState<Track[]>([]);
   const [spotifyError, setSpotifyError] = useState<string | null>(null);
   const [isLoadingSpotify, setIsLoadingSpotify] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Buenos días');
-    else if (hour < 18) setGreeting('Buenas tardes');
-    else setGreeting('Buenas noches');
-
     const initSpotify = async () => {
       setIsLoadingSpotify(true);
       if (isSpotifyConnected) {
@@ -89,18 +87,17 @@ export default function BrowsePage() {
       }
       setIsLoadingSpotify(false);
     };
-    
+
     if (typeof isSpotifyConnected === 'boolean') {
         initSpotify();
     }
 
-  }, [isSpotifyConnected]); 
-
+  }, [isSpotifyConnected]);
 
  const handlePlayItem = (item: QuickPickItem | Album | Track, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
-    if ('audioSrc' in item || 'spotifyUri' in item ) { 
+    if ('audioSrc' in item || 'spotifyUri' in item ) {
         const trackToPlayDirectly = item as Track;
          if (currentTrack?.id === trackToPlayDirectly.id && currentTrack.source === trackToPlayDirectly.source) {
             togglePlayPause();
@@ -109,38 +106,38 @@ export default function BrowsePage() {
         }
         return;
     }
-    
+
     let tracksToPlay: Track[] | undefined = undefined;
     let trackToPlayFromQuickPick: Track | undefined = undefined;
 
-    if ('type' in item) { 
+    if ('type' in item) {
       if (item.type === 'track' && item.track) {
         trackToPlayFromQuickPick = item.track;
       } else if (item.tracks && item.tracks.length > 0) {
         tracksToPlay = item.tracks;
       }
-    } else if ('tracks' in item && (item as Album).tracks) { 
+    } else if ('tracks' in item && (item as Album).tracks) {
       tracksToPlay = (item as Album).tracks;
     }
 
     const isPlayingThisSingleQuickPickTrack = trackToPlayFromQuickPick && currentTrack?.id === trackToPlayFromQuickPick.id && currentTrack.source === trackToPlayFromQuickPick.source;
-    
+
     let isPlayingThisAlbumOrPlaylistContext = false;
     if (tracksToPlay && tracksToPlay.length > 0 && currentTrack && queue.length > 0) {
-        const currentAlbumSource = tracksToPlay[0].source; 
+        const currentAlbumSource = tracksToPlay[0].source;
         if (currentTrack.source === currentAlbumSource && tracksToPlay.some(t => t.id === currentTrack.id)) {
             isPlayingThisAlbumOrPlaylistContext = queue.length === tracksToPlay.length &&
                 queue.every(qTrack => tracksToPlay!.some(itemTrack => itemTrack.id === qTrack.id && itemTrack.source === qTrack.source));
         }
     }
-    
+
 
     if ((isPlayingThisSingleQuickPickTrack && isPlaying) || (isPlayingThisAlbumOrPlaylistContext && isPlaying)) {
       togglePlayPause();
     } else if ((isPlayingThisSingleQuickPickTrack && !isPlaying) || (isPlayingThisAlbumOrPlaylistContext && !isPlaying)) {
       if (trackToPlayFromQuickPick) playTrack(trackToPlayFromQuickPick);
       else if (tracksToPlay && tracksToPlay.length > 0) playPlaylist(tracksToPlay, 0);
-      else togglePlayPause(); 
+      else togglePlayPause();
     } else if (trackToPlayFromQuickPick) {
       playTrack(trackToPlayFromQuickPick);
     } else if (tracksToPlay && tracksToPlay.length > 0) {
@@ -150,73 +147,85 @@ export default function BrowsePage() {
     }
   };
 
+  const handleSearchSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      router.push('/search');
+    }
+  };
 
   return (
     <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold text-foreground mb-4">{greeting}</h1>
-        <div className="flex gap-2 mb-6">
-          {['Todo', 'Música', 'Podcasts'].map(filter => (
-            <Button
-              key={filter}
-              variant={activeFilter === filter ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setActiveFilter(filter)}
-              className={activeFilter === filter ? "bg-card text-card-foreground font-semibold" : "text-muted-foreground"}
-            >
-              {filter}
-            </Button>
-          ))}
-        </div>
-
-        {mockQuickPicks.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-8">
-            {mockQuickPicks.map((item) => {
-              let isCurrentlyActiveItem = false;
-              if (currentTrack) {
-                if (item.type === 'track' && item.track?.id === currentTrack.id && item.track.source === currentTrack.source) {
-                  isCurrentlyActiveItem = true;
-                } else if (item.tracks && item.tracks.some(t => t.id === currentTrack.id && t.source === currentTrack.source) && queue.some(qTrack => item.tracks!.find(iTrack => iTrack.id === qTrack.id && iTrack.source === qTrack.source))) {
-                  const currentContextMatches = queue.length === item.tracks.length && queue.every(qT => item.tracks!.some(iT => iT.id === qT.id && iT.source === qT.source));
-                  if (currentContextMatches) {
-                      isCurrentlyActiveItem = true;
-                  }
-                }
-              }
-              const canPlay = (item.type === 'track' && item.track) || (item.tracks && item.tracks.length > 0);
-
-              return (
-                <Card
-                  key={item.id}
-                  className={cn(
-                      "flex items-center p-0 bg-card hover:shadow-lg hover:ring-1 hover:ring-primary/70 transition-all duration-200 group cursor-pointer relative overflow-hidden rounded-md shadow-sm",
-                      item.colorClass && !item.artworkUrl.includes('placehold.co') ? item.colorClass : 'bg-card'
-                  )}
-                  onClick={() => canPlay && handlePlayItem(item)}
-                >
-                  <Image src={item.artworkUrl} alt={item.title} width={56} height={56} className="aspect-square object-cover rounded-l-md" data-ai-hint={item.dataAiHint} />
-                  <CardContent className="p-3 flex-1 min-w-0">
-                    <CardTitle className="text-sm font-semibold text-foreground truncate">{item.title}</CardTitle>
-                  </CardContent>
-                  {canPlay && (
-                      <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary/70 hover:bg-primary text-primary-foreground rounded-full h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                      onClick={(e) => handlePlayItem(item, e)}
-                      aria-label={`Play ${item.title}`}
-                      >
-                      {(isCurrentlyActiveItem && isPlaying) ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
-                      </Button>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
+      <section className="px-0 md:px-0">
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 md:mb-6 leading-tight">
+          Find The Best <br className="md:hidden" />Music For Your <br className="md:hidden" />Daily Music
+        </h1>
+        <form onSubmit={handleSearchSubmit} className="relative mb-6 md:mb-8">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-full h-12 text-base bg-muted/50 border-transparent focus:bg-card focus:border-primary"
+            aria-label="Search music"
+          />
+        </form>
       </section>
 
-      {/* Spotify Top Tracks Section */}
+      <section>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Popular</h2>
+          <Button variant="link" asChild>
+            <Link href="/library/songs">View All</Link>
+          </Button>
+        </div>
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex space-x-4 pb-4">
+            {mockPopularItems.map((item) => {
+              const isActive = (item.type === 'track' && item.track?.id === currentTrack?.id && item.track.source === currentTrack.source) ||
+                               (item.tracks && item.tracks.some(t => t.id === currentTrack?.id && t.source === currentTrack.source));
+              const canPlay = (item.type === 'track' && item.track) || (item.tracks && item.tracks.length > 0);
+              return(
+              <Card
+                key={item.id}
+                className="group relative w-36 min-w-36 sm:w-40 sm:min-w-40 overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer"
+                onClick={() => canPlay && handlePlayItem(item)}
+              >
+                <CardContent className="p-0">
+                  <Image
+                    src={item.artworkUrl}
+                    alt={item.title}
+                    width={160}
+                    height={160}
+                    className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
+                    data-ai-hint={item.dataAiHint}
+                  />
+                </CardContent>
+                <div className="p-2.5">
+                  <p className="text-sm font-semibold truncate text-foreground">{item.title}</p>
+                  {item.artist && <p className="text-xs text-muted-foreground truncate">{item.artist}</p>}
+                </div>
+                {canPlay && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-[calc(25%+0.5rem)] right-2 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
+                    onClick={(e) => handlePlayItem(item, e)}
+                    aria-label={`Play ${item.title}`}
+                  >
+                    {(isActive && isPlaying) ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+                  </Button>
+                )}
+              </Card>
+            )})}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </section>
+
       {isLoadingSpotify ? (
         <section>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">Tus Top Tracks (Spotify)</h2>
@@ -292,7 +301,6 @@ export default function BrowsePage() {
         </section>
       )}
 
-       {/* AI Genkit Badge Placeholder - Bottom Right */}
       <div className="fixed bottom-28 right-6 md:bottom-6 md:right-6 z-50">
         <div className="bg-card/70 backdrop-blur-sm text-xs text-muted-foreground px-3 py-1.5 rounded-full shadow-lg border border-border/50 flex items-center gap-1.5">
             <span>Potenciado por</span>
@@ -303,3 +311,5 @@ export default function BrowsePage() {
     </div>
   );
 }
+
+    
