@@ -4,6 +4,7 @@
 import type { Track, RepeatMode } from '@/lib/types';
 import type React from 'react';
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { Howl } from 'howler';
 import { 
   checkAndSetupToken, 
   getCurrentPlaybackState, 
@@ -16,8 +17,8 @@ import {
   setSpotifyVolume as spotifySetVolume,
   setShuffle as spotifySetShuffle,
   setRepeat as spotifySetRepeat,
-  logoutSpotify as performSpotifyLogout, // Renamed to avoid conflict
-  spotifyApi // Direct access for token check
+  logoutSpotify as performSpotifyLogout, 
+  spotifyApi 
 } from '@/services/spotify';
 import type { SpotifyPlaybackState, SpotifyTrackItem, SpotifyDevice } from '@/types/spotify';
 
@@ -67,7 +68,7 @@ interface PlayerContextState {
   toggleFullScreenPlayer: () => void;
   setPlaybackProgress: React.Dispatch<React.SetStateAction<number>>;
   syncWithSpotifyPlayback: (isControlAction?: boolean) => Promise<void>;
-  checkSpotifyConnection: () => Promise<void>; // For explicitly re-checking connection
+  checkSpotifyConnection: () => Promise<void>; 
 }
 
 const PlayerContext = createContext<PlayerContextState | undefined>(undefined);
@@ -87,7 +88,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [originalQueue, setOriginalQueue] = useState<Track[]>(MOCK_TRACKS);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
   const [isFullScreenPlayerVisible, setIsFullScreenPlayerVisible] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  
+  const [howlInstance, setHowlInstance] = useState<Howl | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [activeSpotifyDeviceId, setActiveSpotifyDeviceId] = useState<string | null>(null);
@@ -96,7 +99,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const playNextRefCallback = useRef<() => Promise<void>>(async () => {});
 
   const checkSpotifyConnection = useCallback(async () => {
-    const connected = await checkAndSetupToken(); // checkAndSetupToken now can attempt refresh
+    const connected = await checkAndSetupToken(); 
     setIsSpotifyConnected(connected);
     if (connected) {
       try {
@@ -109,15 +112,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.log(`No active Spotify device, falling back to: ${devices[0].name}`);
         } else {
           console.warn("No Spotify devices found or available.");
-          setActiveSpotifyDeviceId(null); // Ensure it's null if no device
+          setActiveSpotifyDeviceId(null); 
         }
       } catch (err) {
         console.error("Error in checkSpotifyConnection during getMyDevices:", err);
-        setIsSpotifyConnected(false); // If fetching devices fails, assume not truly connected
+        setIsSpotifyConnected(false); 
         setActiveSpotifyDeviceId(null);
       }
     } else {
-      // Not connected, clear device ID
       setActiveSpotifyDeviceId(null);
     }
   }, [setIsSpotifyConnected, setActiveSpotifyDeviceId]);
@@ -125,9 +127,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const syncWithSpotifyPlayback = useCallback(async (isControlAction = false) => {
     if (!isSpotifyConnected || !spotifyApi.getAccessToken()) {
-      // If we think we are connected but have no token, re-check. This might trigger a refresh.
       if (isSpotifyConnected) await checkSpotifyConnection();
-      if (!spotifyApi.getAccessToken()) return; // Still no token, exit
+      if (!spotifyApi.getAccessToken()) return; 
     }
 
     const spotifyState = await getCurrentPlaybackState();
@@ -142,9 +143,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setPlaybackProgress(spotifyState.progress_ms / spotifyState.item.duration_ms);
         }
       } else if (!isControlAction) { 
-        // If Spotify is connected but not playing anything, reflect that locally for Spotify tracks
         if (currentTrack?.isSpotifyTrack) {
-            // setCurrentTrack(null); // Or keep current track but set isPlaying false
             setIsPlaying(false);
         }
       }
@@ -156,29 +155,33 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         if (spotifyState.device.volume_percent !== null) {
             const newVolume = spotifyState.device.volume_percent / 100;
-            setVolume(newVolume); // This will also update isMuted via its own effect if volume changes
+            setVolume(newVolume); 
             if (newVolume === 0 && !isMuted) setIsMuted(true);
             else if (newVolume > 0 && isMuted) setIsMuted(false);
         }
       }
-      // If Spotify is playing, ensure local audio is paused
-      if (spotifyState.is_playing && audio && !audio.paused) {
-        audio.pause();
+      
+      if (spotifyState.is_playing && howlInstance && howlInstance.playing()) {
+        howlInstance.pause();
       }
     } else {
-        // getCurrentPlaybackState returned null, might mean token expired or other issue
         console.log("syncWithSpotifyPlayback: getCurrentPlaybackState returned null. Re-checking connection.");
-        await checkSpotifyConnection(); // This will try to refresh if needed
+        await checkSpotifyConnection(); 
     }
-  }, [isSpotifyConnected, audio, currentTrack, activeSpotifyDeviceId, isMuted, checkSpotifyConnection, setCurrentTrack, setIsPlaying, setPlaybackProgress, setShuffle, setRepeatMode, setVolume, setIsMuted, setActiveSpotifyDeviceId]);
+  }, [isSpotifyConnected, howlInstance, currentTrack, activeSpotifyDeviceId, isMuted, checkSpotifyConnection, setCurrentTrack, setIsPlaying, setPlaybackProgress, setShuffle, setRepeatMode, setVolume, setIsMuted, setActiveSpotifyDeviceId]);
 
 
   const playTrack = useCallback(async (track: Track, playFromQueue: boolean = false, index?: number) => {
+    if (howlInstance) { // Stop and unload any existing Howl instance
+        howlInstance.stop();
+        howlInstance.unload();
+        setHowlInstance(null);
+    }
+
     if (track.isSpotifyTrack && isSpotifyConnected && activeSpotifyDeviceId && track.spotifyUri) {
       const result = await spotifyPlay({ uris: [track.spotifyUri], device_id: activeSpotifyDeviceId });
-      if (audio && !audio.paused) { audio.pause(); audio.src = ''; }
-      if (result === null && !spotifyApi.getAccessToken()) { // Play call failed, likely due to auth
-        setIsSpotifyConnected(false); // Mark as disconnected
+      if (result === null && !spotifyApi.getAccessToken()) { 
+        setIsSpotifyConnected(false); 
         console.warn("Spotify play failed, token might be invalid. Marked as disconnected.");
         return;
       }
@@ -186,29 +189,55 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsPlaying(true);
       if (playFromQueue && index !== undefined) setCurrentQueueIndex(index);
       setTimeout(() => syncWithSpotifyPlayback(true), 500); 
-    } else if (track.audioSrc && audio) {
-      if (currentTrack?.isSpotifyTrack && isPlaying) { // If switching from Spotify to local
+    } else if (track.audioSrc) {
+      if (currentTrack?.isSpotifyTrack && isPlaying) { 
           await spotifyPause({device_id: activeSpotifyDeviceId || undefined });
       }
-      if (audio.src !== track.audioSrc) audio.src = track.audioSrc;
-      audio.currentTime = 0;
-      try {
-        await audio.play();
-        setCurrentTrack(track);
-        setIsPlaying(true);
-        if (playFromQueue && index !== undefined) setCurrentQueueIndex(index);
-      } catch (e) { console.error("Error playing local audio:", e); setIsPlaying(false); }
+      const newHowl = new Howl({
+        src: [track.audioSrc],
+        html5: true,
+        volume: isMuted ? 0 : volume,
+        onplay: () => setIsPlaying(true),
+        onpause: () => setIsPlaying(false),
+        onstop: () => setIsPlaying(false),
+        onend: () => {
+          // setIsPlaying(false); // onstop should cover this
+          playNextRefCallback.current();
+        },
+        onseek: () => {
+            if (currentTrack && currentTrack.duration > 0) {
+                const seekTime = newHowl.seek();
+                if (typeof seekTime === 'number') {
+                    setPlaybackProgress(seekTime / currentTrack.duration);
+                }
+            }
+        },
+        onloaderror: (id, err) => {
+            console.error("Howler load error:", id, err, track.audioSrc);
+            setIsPlaying(false);
+            setHowlInstance(null);
+        },
+        onplayerror: (id, err) => {
+            console.error("Howler play error:", id, err);
+            setIsPlaying(false);
+            if (newHowl) newHowl.unload();
+            setHowlInstance(null);
+        },
+      });
+      newHowl.play();
+      setHowlInstance(newHowl);
+      setCurrentTrack(track);
+      if (playFromQueue && index !== undefined) setCurrentQueueIndex(index);
     } else if (!track.audioSrc && !track.isSpotifyTrack) {
-        if (currentTrack?.isSpotifyTrack && isPlaying) { // If switching from Spotify to conceptual
+        if (currentTrack?.isSpotifyTrack && isPlaying) { 
              await spotifyPause({device_id: activeSpotifyDeviceId || undefined });
         }
         setCurrentTrack(track);
         setIsPlaying(true); 
         if (playFromQueue && index !== undefined) setCurrentQueueIndex(index);
-        if (audio && !audio.paused) { audio.pause(); audio.src = '';} 
         console.log("Track has no audioSrc and is not a Spotify track. Conceptually playing:", track.title);
     }
-  }, [audio, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, currentTrack, isPlaying, setCurrentTrack, setIsPlaying, setCurrentQueueIndex, setIsSpotifyConnected]);
+  }, [isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, currentTrack, isPlaying, howlInstance, isMuted, volume, setCurrentTrack, setIsPlaying, setCurrentQueueIndex, setIsSpotifyConnected, setHowlInstance]);
 
   const togglePlayPause = useCallback(async () => {
     if (!currentTrack) {
@@ -220,18 +249,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (isPlaying) result = await spotifyPause({ device_id: activeSpotifyDeviceId });
       else result = await spotifyPlay({ device_id: activeSpotifyDeviceId }); 
       
-      if (result === null && !spotifyApi.getAccessToken()) { // Auth failed
+      if (result === null && !spotifyApi.getAccessToken()) { 
         setIsSpotifyConnected(false);
         return;
       }
       setIsPlaying(!isPlaying); 
       setTimeout(() => syncWithSpotifyPlayback(true), 500);
-    } else if (audio) {
-      if (isPlaying) audio.pause();
-      else try { await audio.play(); } catch (e) { console.error("Error toggling local audio:", e); setIsPlaying(false); return; }
-      setIsPlaying(!isPlaying);
+    } else if (howlInstance) {
+      if (howlInstance.playing()) howlInstance.pause();
+      else howlInstance.play();
+      // isPlaying state will be updated by Howl's onplay/onpause callbacks
     }
-  }, [currentTrack, audio, isPlaying, queue, playTrack, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, setIsPlaying, setIsSpotifyConnected]);
+  }, [currentTrack, isPlaying, queue, playTrack, isSpotifyConnected, activeSpotifyDeviceId, howlInstance, syncWithSpotifyPlayback, setIsPlaying, setIsSpotifyConnected]);
 
   const playNext = useCallback(async () => {
     if (currentTrack?.isSpotifyTrack && isSpotifyConnected && activeSpotifyDeviceId) {
@@ -239,20 +268,30 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
        if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); return; }
       setTimeout(() => syncWithSpotifyPlayback(true), 500);
     } else { 
+      if (howlInstance) {
+        howlInstance.stop();
+        howlInstance.unload();
+        setHowlInstance(null);
+      }
       if (queue.length === 0) return;
       let nextIndex = currentQueueIndex + 1;
-      if (repeatMode === 'one' && currentTrack && isPlaying) {
-        if (audio) { audio.currentTime = 0; if (audio.paused) audio.play().catch(e=>console.error(e));} 
-        else setPlaybackProgress(0);
+      if (repeatMode === 'one' && currentTrack && isPlaying && howlInstance) {
+        // This state (isPlaying && howlInstance exists for currentTrack) might be rare if onend already fired.
+        // Re-trigger playTrack for the same track.
+        await playTrack(currentTrack, true, currentQueueIndex);
+        return;
+      } else if (repeatMode === 'one' && currentTrack && howlInstance) { // If paused but repeat one
+        await playTrack(currentTrack, true, currentQueueIndex);
         return;
       }
+
       if (nextIndex >= queue.length) {
         if (repeatMode === 'all' || repeatMode === 'context') nextIndex = 0;
         else { setIsPlaying(false); return; }
       }
       if (queue[nextIndex]) await playTrack(queue[nextIndex], true, nextIndex);
     }
-  }, [currentTrack, queue, currentQueueIndex, repeatMode, isPlaying, audio, playTrack, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, setPlaybackProgress, setIsPlaying, setIsSpotifyConnected]);
+  }, [currentTrack, queue, currentQueueIndex, repeatMode, isPlaying, playTrack, isSpotifyConnected, activeSpotifyDeviceId, howlInstance, syncWithSpotifyPlayback, setIsPlaying, setIsSpotifyConnected, setHowlInstance]);
 
   const playPrevious = useCallback(async () => {
      if (currentTrack?.isSpotifyTrack && isSpotifyConnected && activeSpotifyDeviceId) {
@@ -260,39 +299,35 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); return; }
       setTimeout(() => syncWithSpotifyPlayback(true), 500);
     } else { 
-      if (queue.length === 0) return;
-      if (audio && currentTrack && audio.currentTime > 3 && isPlaying) { // Only rewind if playing and past 3s 
-        audio.currentTime = 0;
-        // No need to call audio.play() as it's already playing
-        return;
-      } else if (audio && currentTrack && audio.currentTime > 3 && !isPlaying) { // If paused but past 3s, rewind and stay paused
-         audio.currentTime = 0;
-         setPlaybackProgress(0); // Reflect rewind in UI
-         return;
+      if (howlInstance && currentTrack && typeof howlInstance.seek() === 'number' && (howlInstance.seek() as number) > 3) {
+        howlInstance.seek(0);
+        return; // Stay on current track, just rewind
       }
-      // If currentTime <= 3 or not an audio track, proceed to previous logic
+
+      if (howlInstance) { 
+        howlInstance.stop();
+        howlInstance.unload();
+        setHowlInstance(null);
+      }
+
       let prevIndex = currentQueueIndex - 1;
       if (prevIndex < 0) {
-        if (repeatMode === 'all' || repeatMode === 'context') prevIndex = queue.length - 1; 
-        else { 
-            if (audio && currentTrack) { 
-                audio.currentTime = 0; 
-                setPlaybackProgress(0);
-                if (!isPlaying) { 
-                    // If it was paused, and we are at the beginning, don't auto-play. 
-                    // User has to explicitly play.
-                } else if (audio.paused) {
-                   audio.play().catch(e=>console.error("Error re-playing after skip-to-start:", e));
-                }
-            } else if (queue.length > 0) { // No current audio track, but queue exists
+        if (repeatMode === 'all' || repeatMode === 'context') {
+            prevIndex = queue.length - 1;
+        } else {
+            if (queue.length > 0 && currentQueueIndex === 0) {
                  await playTrack(queue[0], true, 0); 
+            } else {
+                 setIsPlaying(false); 
             }
             return;
         }
       }
-      if (queue[prevIndex]) await playTrack(queue[prevIndex], true, prevIndex);
+      if (queue[prevIndex]) {
+        await playTrack(queue[prevIndex], true, prevIndex);
+      }
     }
-  }, [currentTrack, audio, isPlaying, queue, currentQueueIndex, repeatMode, playTrack, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, setIsPlaying, setPlaybackProgress, setIsSpotifyConnected]);
+  }, [currentTrack, isPlaying, queue, currentQueueIndex, repeatMode, playTrack, isSpotifyConnected, activeSpotifyDeviceId, howlInstance, syncWithSpotifyPlayback, setIsPlaying, setIsSpotifyConnected, setHowlInstance]);
   
   const seek = useCallback(async (progress: number) => {
     if (currentTrack?.isSpotifyTrack && isSpotifyConnected && activeSpotifyDeviceId && currentTrack.duration > 0) {
@@ -300,23 +335,22 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); return; }
       setPlaybackProgress(progress); 
       setTimeout(() => syncWithSpotifyPlayback(true), 500); 
-    } else if (audio && currentTrack && currentTrack.duration > 0) {
-      audio.currentTime = progress * currentTrack.duration;
-      setPlaybackProgress(progress);
+    } else if (howlInstance && currentTrack && currentTrack.duration > 0) {
+      howlInstance.seek(progress * currentTrack.duration);
+      // Playback progress updated by onseek or rAF loop
     }
-  }, [currentTrack, audio, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, setPlaybackProgress, setIsSpotifyConnected]);
+  }, [currentTrack, isSpotifyConnected, activeSpotifyDeviceId, howlInstance, syncWithSpotifyPlayback, setPlaybackProgress, setIsSpotifyConnected]);
 
   const handleSetVolume = useCallback(async (newVolume: number) => {
     if (isSpotifyConnected && activeSpotifyDeviceId) {
       const result = await spotifySetVolume(Math.round(newVolume * 100), { device_id: activeSpotifyDeviceId });
-      if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); /* No return here, still update local state */ }
-    } else if (audio) {
-      audio.volume = newVolume;
+      if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); }
+    } else if (howlInstance) {
+      howlInstance.volume(newVolume);
     }
     setVolume(newVolume);
-    // setIsMuted handled by useEffect watching volume
     if (newVolume > 0 && isMuted) setLastVolume(newVolume); 
-  }, [audio, isSpotifyConnected, activeSpotifyDeviceId, isMuted, setVolume, setLastVolume, setIsSpotifyConnected]); // Removed setIsMuted as it's handled by effect
+  }, [isSpotifyConnected, activeSpotifyDeviceId, howlInstance, isMuted, setVolume, setLastVolume, setIsSpotifyConnected]); 
 
   useEffect(() => {
     if (volume === 0 && !isMuted) {
@@ -332,9 +366,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     if (isSpotifyConnected && activeSpotifyDeviceId) {
         const result = await spotifySetVolume(Math.round(targetVolume * 100), { device_id: activeSpotifyDeviceId });
-         if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); /* No return, still update local state */ }
-    } else if (audio) {
-        audio.volume = targetVolume;
+         if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); }
+    } else if (howlInstance) {
+        howlInstance.volume(targetVolume);
     }
     
     if (!newMutedState && volume > 0) setLastVolume(volume); 
@@ -342,9 +376,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     else if (newMutedState && volume === 0) setLastVolume(0.75); 
 
     setVolume(targetVolume); 
-    // setIsMuted(newMutedState); // This will be re-affirmed by the useEffect above or sync
-
-  }, [audio, isMuted, volume, lastVolume, isSpotifyConnected, activeSpotifyDeviceId, setVolume, setLastVolume, setIsSpotifyConnected]); // Removed setIsMuted
+  }, [isMuted, volume, lastVolume, isSpotifyConnected, activeSpotifyDeviceId, howlInstance, setVolume, setLastVolume, setIsSpotifyConnected]); 
   
   const toggleShuffle = useCallback(async () => {
     const newShuffleState = !shuffle;
@@ -392,7 +424,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (result === null && !spotifyApi.getAccessToken()) { setIsSpotifyConnected(false); return; }
       setTimeout(() => syncWithSpotifyPlayback(true), 500);
     } 
-    // Always update local state for immediate UI feedback / local playback
     setRepeatMode(newRepeatStateSdk);
     
   }, [repeatMode, isSpotifyConnected, activeSpotifyDeviceId, syncWithSpotifyPlayback, setRepeatMode, setIsSpotifyConnected]);
@@ -470,59 +501,65 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [playNext]);
 
   useEffect(() => {
-    const newAudio = new Audio();
-    setAudio(newAudio);
-    
-    const updateProgress = () => {
-        if (newAudio.duration && !currentTrack?.isSpotifyTrack) { 
-            setPlaybackProgress(newAudio.currentTime / newAudio.duration);
-        }
-    };
-    const handleEnded = () => { if (!currentTrack?.isSpotifyTrack) playNextRefCallback.current(); };
-
-    newAudio.addEventListener('timeupdate', updateProgress);
-    newAudio.addEventListener('ended', handleEnded);
-    newAudio.addEventListener('loadedmetadata', updateProgress); 
-    
+    // Cleanup function for Howl instance
     return () => {
-      newAudio.removeEventListener('timeupdate', updateProgress);
-      newAudio.removeEventListener('ended', handleEnded);
-      newAudio.removeEventListener('loadedmetadata', updateProgress);
-      newAudio.pause();
-      setAudio(null); 
+      if (howlInstance) {
+        howlInstance.stop();
+        howlInstance.unload();
+        setHowlInstance(null); 
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [currentTrack?.isSpotifyTrack]); 
+  }, [howlInstance, setHowlInstance]); 
 
   useEffect(() => {
-    checkSpotifyConnection(); // Initial check
+    const updateHowlerProgress = () => {
+      if (howlInstance && howlInstance.playing() && currentTrack && currentTrack.duration > 0 && !currentTrack.isSpotifyTrack) {
+        const seekTime = howlInstance.seek();
+        if (typeof seekTime === 'number') { 
+          setPlaybackProgress(seekTime / currentTrack.duration);
+        }
+      }
+      animationFrameRef.current = requestAnimationFrame(updateHowlerProgress);
+    };
+
+    if (isPlaying && howlInstance && !currentTrack?.isSpotifyTrack) {
+      animationFrameRef.current = requestAnimationFrame(updateHowlerProgress);
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying, howlInstance, currentTrack, setPlaybackProgress]);
+
+
+  useEffect(() => {
+    checkSpotifyConnection(); 
 
     const handleAuthError = () => {
       console.log("PlayerContext: Detected Spotify auth error. Updating connection status.");
       setIsSpotifyConnected(false);
       setActiveSpotifyDeviceId(null);
-      // Optionally clear current track if it's a Spotify track and we can no longer control it
-      // if (currentTrack?.isSpotifyTrack) {
-      //   setCurrentTrack(null);
-      //   setIsPlaying(false);
-      // }
     };
-
     window.addEventListener('spotifyAuthError', handleAuthError);
-    
     return () => {
         window.removeEventListener('spotifyAuthError', handleAuthError);
     };
-
   }, [checkSpotifyConnection]);
 
 
   useEffect(() => {
     if (isSpotifyConnected && spotifyApi.getAccessToken()) {
       syncWithSpotifyPlayback(); 
-      
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
-      
-      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1500 : 50; // Changed 50000 to 50
+      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1500 : 50; 
       syncIntervalRef.current = setInterval(() => syncWithSpotifyPlayback(), interval);
     } else {
         if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
@@ -532,18 +569,19 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
   useEffect(() => {
-    if(audio && currentTrack && !currentTrack.isSpotifyTrack && currentTrack.audioSrc) {
-      if (isPlaying && audio.paused) {
-        audio.play().catch(e => console.error("Error playing local audio (effect):", e));
-      } else if (!isPlaying && !audio.paused) {
-        audio.pause();
+    if(howlInstance && currentTrack && !currentTrack.isSpotifyTrack) {
+      if (isPlaying && !howlInstance.playing()) {
+        howlInstance.play();
+      } else if (!isPlaying && howlInstance.playing()) {
+        howlInstance.pause();
       }
-      audio.volume = isMuted ? 0 : volume;
-    } else if (audio && (!currentTrack || currentTrack?.isSpotifyTrack || !currentTrack.audioSrc)) { 
-        if (!audio.paused) audio.pause();
-        if (audio.src) audio.src = ''; 
+      howlInstance.volume(isMuted ? 0 : volume);
+    } else if (howlInstance && (!currentTrack || currentTrack?.isSpotifyTrack)) { 
+        if (howlInstance.playing()) howlInstance.stop(); // Stop if playing
+        howlInstance.unload(); // Unload if it's not needed for current track type
+        setHowlInstance(null);
     }
-  }, [isPlaying, currentTrack, audio, volume, isMuted]);
+  }, [isPlaying, currentTrack, howlInstance, volume, isMuted, setHowlInstance]);
 
 
   return (
