@@ -6,12 +6,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Loader2, Mic2, AlertCircle, ExternalLink } from 'lucide-react';
-import { fetchLyrics, type FetchLyricsOutput } from '@/ai/flows/fetch-lyrics-flow'; 
+import { fetchLyrics, type FetchLyricsOutput } from '@/ai/flows/fetch-lyrics-flow';
 import { Button } from '../ui/button';
 
 interface LyricsDisplayProps {
   track: Track;
   currentTime: number; // in seconds
+  onFirstLyricLineAvailable?: (line: string) => void; // Callback for the first lyric line
 }
 
 interface LyricLine {
@@ -29,8 +30,8 @@ function parseLRC(lrcContent: string | null | undefined): LyricLine[] {
     let textPart = line;
     const timestamps: number[] = [];
     let lastTagEndIndex = -1;
-    
-    timeTagRegex.lastIndex = 0; 
+
+    timeTagRegex.lastIndex = 0;
     let match;
     while ((match = timeTagRegex.exec(line)) !== null) {
       const minutes = parseInt(match[1], 10);
@@ -45,7 +46,7 @@ function parseLRC(lrcContent: string | null | undefined): LyricLine[] {
     } else {
       textPart = line.trim();
     }
-    
+
     if (textPart === "" || (/^\[(ar|ti|al|by|offset|length|re|ve):/.test(line.trim()) && timestamps.length === 0)) {
       continue;
     }
@@ -54,7 +55,7 @@ function parseLRC(lrcContent: string | null | undefined): LyricLine[] {
       for (const time of timestamps) {
         lyricsArray.push({ time, line: textPart });
       }
-    } else if (textPart) { 
+    } else if (textPart) {
       const prevTime = lyricsArray.length > 0 ? lyricsArray[lyricsArray.length - 1].time : 0;
       lyricsArray.push({ time: prevTime, line: textPart });
     }
@@ -64,7 +65,7 @@ function parseLRC(lrcContent: string | null | undefined): LyricLine[] {
 }
 
 
-export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
+export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }: LyricsDisplayProps) {
   const [parsedLyrics, setParsedLyrics] = useState<LyricLine[]>([]);
   const [plainLyrics, setPlainLyrics] = useState<string | null>(null);
   const [isInstrumental, setIsInstrumental] = useState(false);
@@ -72,18 +73,29 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(-1);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [processedTrackId, setProcessedTrackId] = useState<string | null>(null); // Track ID for which lyrics have been fetched/are fetching
 
   const currentLineRef = useRef<HTMLParagraphElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
-    if (!track || !track.title || !track.artist) { // Basic validation
+    if (!track || !track.title || !track.artist) {
       setError("Track information is incomplete.");
+      setParsedLyrics([]);
+      setPlainLyrics(null);
+      setIsInstrumental(false);
+      setSourceUrl(null);
+      setCurrentLineIndex(-1);
+      setProcessedTrackId(null); // Reset if track is invalid
+      setIsLoading(false);
       return;
     }
 
-    const loadLyrics = async () => {
+    if (track.id !== processedTrackId) {
+      setProcessedTrackId(track.id); // Mark this new track ID as the one we are processing.
+
+      // Reset states for the new track before loading
       setIsLoading(true);
       setError(null);
       setParsedLyrics([]);
@@ -92,67 +104,59 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
       setSourceUrl(null);
       setCurrentLineIndex(-1);
 
-      try {
-        const result: FetchLyricsOutput = await fetchLyrics({
-          trackName: track.title,
-          artistName: track.artist,
-          albumName: track.album, // Optional, can be undefined
-          duration: track.duration, // Optional, can be undefined
-        });
+      const loadLyrics = async () => {
+        try {
+          const result: FetchLyricsOutput = await fetchLyrics({
+            trackName: track.title,
+            artistName: track.artist,
+            albumName: track.album,
+            duration: track.duration,
+          });
 
-        if (result.message && !result.syncedLyrics && !result.plainLyrics && !result.instrumental) {
-          setError(result.message);
-        } else {
-           if (result.instrumental) {
-            setIsInstrumental(true);
-          } else if (result.syncedLyrics) {
-            setParsedLyrics(parseLRC(result.syncedLyrics));
-            setPlainLyrics(null); 
-          } else if (result.plainLyrics) {
-            setPlainLyrics(result.plainLyrics);
-            setParsedLyrics([]); 
+          if (result.message && !result.syncedLyrics && !result.plainLyrics && !result.instrumental) {
+            setError(result.message);
           } else {
-             setError(result.message || "Lyrics not available for this song.");
+            if (result.instrumental) {
+              setIsInstrumental(true);
+            } else if (result.syncedLyrics) {
+              const newParsedLyrics = parseLRC(result.syncedLyrics);
+              setParsedLyrics(newParsedLyrics);
+              setPlainLyrics(null);
+              if (onFirstLyricLineAvailable && newParsedLyrics.length > 0) {
+                onFirstLyricLineAvailable(newParsedLyrics[0].line);
+              }
+            } else if (result.plainLyrics) {
+              setPlainLyrics(result.plainLyrics);
+              setParsedLyrics([]);
+              if (onFirstLyricLineAvailable) {
+                const firstLine = result.plainLyrics.split('\n')[0];
+                if (firstLine) onFirstLyricLineAvailable(firstLine);
+              }
+            } else {
+              setError(result.message || "Lyrics not available for this song.");
+            }
+            if (result.lyricsId && result.sourceName && track.title && track.artist) {
+              const searchFriendlyArtist = track.artist.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+              const searchFriendlyTitle = track.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+              if (result.lyricsId) {
+                setSourceUrl(`https://lrclib.net/lyrics/${searchFriendlyArtist}/${searchFriendlyTitle}`);
+              } else {
+                setSourceUrl(`https://lrclib.net/search?artist_name=${encodeURIComponent(track.artist)}&track_name=${encodeURIComponent(track.title)}`);
+              }
+            }
           }
-          if (result.lyricsId && result.sourceName && track.title && track.artist) {
-            // Construct URL-friendly components
-            const artistComponent = encodeURIComponent(track.artist.toLowerCase().replace(/ /g, '-'));
-            const titleComponent = encodeURIComponent(track.title.toLowerCase().replace(/ /g, '-'));
-            setSourceUrl(`https://lrclib.net/lyrics/${artistComponent}/${titleComponent}`);
-            // Simpler embed: `https://lrclib.net/embed/${result.lyricsId}`
-            // More accurate but complex: `https://lrclib.net/lyrics/${result.lyricsId}/${encodeURIComponent(track.artist)}/${encodeURIComponent(track.title)}`
-            // The one above uses names for the URL path, let's try a more direct ID link if available from API or a generic link.
-            // Using the title/artist for URL seems to be how lrclib.net structures some URLs.
-            // Let's try `https://lrclib.net/lyrics/${result.lyricsId}` if that's how their URLs are usually structured for direct ID access.
-            // After checking lrclib.net, a common pattern is /lyrics/artist-name/track-name
-            // Let's stick to a simplified version or just the ID link if that's more reliable
-            // For now: `https://lrclib.net/lyrics/${result.lyricsId}` - this is a guess, their API docs are brief.
-            // Fallback: `https://lrclib.net/search?q=${encodeURIComponent(track.artist + " " + track.title)}`
-            // Let's use a general search URL with the track ID to be safe if direct linking is tricky.
-            // The sourceName from API is just the filename, not a path.
-            // The /lyrics/id endpoint does not exist.
-            // The most reliable is /lyrics/artist-name/song-name or /search.
-            // Let's try to build the artist/song name path.
-             const searchFriendlyArtist = track.artist.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-             const searchFriendlyTitle = track.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-             if (result.lyricsId){ // if ID is present, specific link might be possible
-                 setSourceUrl(`https://lrclib.net/lyrics/${searchFriendlyArtist}/${searchFriendlyTitle}`);
-             } else {
-                 setSourceUrl(`https://lrclib.net/search?artist_name=${encodeURIComponent(track.artist)}&track_name=${encodeURIComponent(track.title)}`);
-             }
-          }
+        } catch (e: any) {
+          console.error("Full error object from fetchLyrics:", e);
+          console.error("Failed to fetch lyrics client-side:", e.message, e.stack);
+          setError(`Failed to load lyrics: ${e.message || 'Unknown error'}`);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (e: any) {
-        console.error("Full error object from fetchLyrics:", e); // Log the full error
-        console.error("Failed to fetch lyrics client-side:", e.message, e.stack);
-        setError(`Failed to load lyrics: ${e.message || 'Unknown error'}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadLyrics();
-  }, [track]);
+      };
+      loadLyrics();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track, onFirstLyricLineAvailable]); // processedTrackId is intentionally NOT a dependency here
 
   useEffect(() => {
     if (!parsedLyrics || parsedLyrics.length === 0) {
@@ -171,14 +175,14 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
 
   }, [currentTime, parsedLyrics]);
 
- useEffect(() => {
+  useEffect(() => {
     if (currentLineRef.current && scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
       if (viewport) {
         const lineOffsetTop = currentLineRef.current.offsetTop;
         const lineHeight = currentLineRef.current.offsetHeight;
         const viewportHeight = viewport.clientHeight;
-        
+
         let scrollTo = lineOffsetTop - (viewportHeight / 2) + (lineHeight / 2);
         scrollTo = Math.max(0, Math.min(scrollTo, viewport.scrollHeight - viewportHeight));
 
@@ -206,18 +210,18 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
       </div>
     );
   }
-  
+
   if (isInstrumental) {
-     return (
+    return (
       <div className="flex flex-col items-center justify-center h-full text-center text-primary-foreground/70">
         <Mic2 className="w-16 h-16 mb-4" />
         <p className="text-lg">This track is instrumental.</p>
         {sourceUrl && (
-            <Button variant="link" asChild className="mt-4 text-primary-foreground/50 hover:text-primary-foreground">
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                View on LRCLIB <ExternalLink className="ml-1 h-4 w-4"/>
-                </a>
-            </Button>
+          <Button variant="link" asChild className="mt-4 text-primary-foreground/50 hover:text-primary-foreground">
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+              View on LRCLIB <ExternalLink className="ml-1 h-4 w-4" />
+            </a>
+          </Button>
         )}
       </div>
     );
@@ -226,30 +230,30 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
   if (parsedLyrics.length > 0) {
     return (
       <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
-        <div className="py-10 md:py-16 lg:py-20 px-4 text-center"> 
+        <div className="py-10 md:py-16 lg:py-20 px-4 text-center">
           {parsedLyrics.map((line, index) => (
             <p
-              key={`${line.time}-${index}-${Math.random()}`} // More unique key
+              key={`${line.time}-${index}-${Math.random()}`}
               ref={index === currentLineIndex ? currentLineRef : null}
               className={cn(
                 "text-xl md:text-2xl lg:text-3xl font-medium my-3 md:my-4 leading-relaxed transition-all duration-300 ease-in-out",
                 index === currentLineIndex
                   ? "text-primary-foreground scale-100 opacity-100 font-semibold"
-                  : "text-primary-foreground/60 opacity-70 scale-95" 
+                  : "text-primary-foreground/60 opacity-70 scale-95"
               )}
             >
-              {line.line || <>&nbsp;</>} 
+              {line.line || <>&nbsp;</>}
             </p>
           ))}
           {sourceUrl && (
             <div className="mt-8 text-center">
-                <Button variant="link" asChild className="text-xs text-primary-foreground/50 hover:text-primary-foreground">
-                    <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                    Lyrics from LRCLIB <ExternalLink className="ml-1 h-3 w-3"/>
-                    </a>
-                </Button>
+              <Button variant="link" asChild className="text-xs text-primary-foreground/50 hover:text-primary-foreground">
+                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+                  Lyrics from LRCLIB <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </Button>
             </div>
-           )}
+          )}
         </div>
       </ScrollArea>
     );
@@ -258,37 +262,37 @@ export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
   if (plainLyrics) {
     return (
       <ScrollArea className="h-full w-full">
-        <div className="py-10 md:py-16 lg:py-20 px-4 text-left"> 
+        <div className="py-10 md:py-16 lg:py-20 px-4 text-left">
           {plainLyrics.split('\n').map((line, index) => (
             <p key={index} className="text-lg md:text-xl my-1 text-primary-foreground/80">
               {line || <>&nbsp;</>}
             </p>
           ))}
-           {sourceUrl && (
+          {sourceUrl && (
             <div className="mt-8 text-left">
-                 <Button variant="link" asChild className="text-xs text-primary-foreground/50 hover:text-primary-foreground">
-                    <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                    Lyrics from LRCLIB <ExternalLink className="ml-1 h-3 w-3"/>
-                    </a>
-                </Button>
+              <Button variant="link" asChild className="text-xs text-primary-foreground/50 hover:text-primary-foreground">
+                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+                  Lyrics from LRCLIB <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </Button>
             </div>
-           )}
+          )}
         </div>
       </ScrollArea>
     );
   }
 
   return (
-      <div className="flex flex-col items-center justify-center h-full text-center text-primary-foreground/70">
-        <Mic2 className="w-16 h-16 mb-4" />
-        <p className="text-lg">Lyrics not available for this song.</p>
-         {sourceUrl && ( // Also show link here if a search URL was constructed but no lyrics found
-            <Button variant="link" asChild className="mt-4 text-primary-foreground/50 hover:text-primary-foreground">
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                Search on LRCLIB <ExternalLink className="ml-1 h-4 w-4"/>
-                </a>
-            </Button>
-        )}
-      </div>
-    );
+    <div className="flex flex-col items-center justify-center h-full text-center text-primary-foreground/70">
+      <Mic2 className="w-16 h-16 mb-4" />
+      <p className="text-lg">Lyrics not available for this song.</p>
+      {sourceUrl && (
+        <Button variant="link" asChild className="mt-4 text-primary-foreground/50 hover:text-primary-foreground">
+          <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+            Search on LRCLIB <ExternalLink className="ml-1 h-4 w-4" />
+          </a>
+        </Button>
+      )}
+    </div>
+  );
 }
