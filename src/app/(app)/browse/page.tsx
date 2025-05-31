@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import type { Album, Track as AppTrack } from '@/lib/types'; // Renamed to avoid conflict
-import { Play, Pause, Heart } from 'lucide-react';
+import { Play, Pause, Heart, Library as LibraryIcon } from 'lucide-react'; // Added LibraryIcon
 import { Button } from '@/components/ui/button';
 import { usePlayer } from '@/contexts/PlayerContext';
 // import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"; // Keep if needed for other sections
@@ -45,6 +45,14 @@ const mockQuickPicks: QuickPickItem[] = [
     colorClass: 'bg-brand-orange'
   },
 ];
+
+const mockPublicLibraryTracks: AppTrack[] = [
+  { id: 'pub1', title: 'Ethereal Echoes (Hi-Fi)', artist: 'Audiophile Dreams', album: 'Lossless Collection Vol. 1', duration: 245, artworkUrl: 'https://placehold.co/300x300/8B5CF6/FFFFFF.png?text=EE', dataAiHint: "abstract soundwave", audioSrc:"/audio/inspiring-emotional-uplifting-piano.mp3", isSpotifyTrack: false },
+  { id: 'pub2', title: 'Crystal Clear Notes (FLAC)', artist: 'Pristine Audio', album: 'Lossless Collection Vol. 1', duration: 190, artworkUrl: 'https://placehold.co/300x300/8B5CF6/FFFFFF.png?text=CN', dataAiHint: "clear crystal", audioSrc:"/audio/electronic-background-music.mp3", isSpotifyTrack: false },
+  { id: 'pub3', title: 'Deep Groove Masters', artist: 'Studio Sounds', album: 'Uncompressed Funk', duration: 310, artworkUrl: 'https://placehold.co/300x300/EC4899/FFFFFF.png?text=DG', dataAiHint: "vinyl record", audioSrc:"/audio/synthwave-nostalgia.mp3", isSpotifyTrack: false },
+  { id: 'pub4', title: 'Orchestral Suite No. 7 (Live)', artist: 'Grand Philharmonic', album: 'Live Recordings', duration: 420, artworkUrl: 'https://placehold.co/300x300/F59E0B/FFFFFF.png?text=OS', dataAiHint: "orchestra hall", audioSrc:"/audio/inspiring-emotional-uplifting-piano.mp3", isSpotifyTrack: false },
+];
+
 
 const mockNewReleaseAlbums: Album[] = [
   { id: 'album1', title: 'Viernes Novedades', artist: 'Various Artists', artworkUrl: 'https://placehold.co/300x300/E11D48/FFFFFF.png?text=VN', dataAiHint:"new music friday", tracks: [
@@ -145,8 +153,8 @@ export default function BrowsePage() {
  const handlePlayItem = (item: QuickPickItem | Album | AppTrack, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
-    // Case 1: Single AppTrack (e.g., from Spotify top tracks)
-    if ('audioSrc' in item && item.id && !('type' in item) && !('tracks' in item) || item.isSpotifyTrack) {
+    // Case 1: Single AppTrack (e.g., from Spotify top tracks or Public Library)
+    if (('audioSrc' in item || 'spotifyUri' in item) && item.id && !('type' in item) && !('tracks' in item)) {
       const singleTrack = item as AppTrack;
       if (currentTrack?.id === singleTrack.id) {
         togglePlayPause();
@@ -180,24 +188,14 @@ export default function BrowsePage() {
     if ((isPlayingThisSingleQuickPickTrack && isPlaying) || (isPlayingThisAlbumOrPlaylistContext && isPlaying)) {
       togglePlayPause();
     } else if ((isPlayingThisSingleQuickPickTrack && !isPlaying) || (isPlayingThisAlbumOrPlaylistContext && !isPlaying)) {
-      // If paused and it's the current context, togglePlayPause will resume it.
-      // If it's a new context but the first track happens to be the currentTrack (paused),
-      // playPlaylist/playTrack will handle starting it fresh.
       if (trackToPlay) playTrack(trackToPlay);
       else if (tracksToPlay && tracksToPlay.length > 0) playPlaylist(tracksToPlay, 0);
-      else togglePlayPause(); // Fallback, should ideally be covered by specific play actions
+      else togglePlayPause(); 
     } else if (trackToPlay) {
       playTrack(trackToPlay);
     } else if (tracksToPlay && tracksToPlay.length > 0) {
       playPlaylist(tracksToPlay, 0);
     } else {
-      // If we are here, it means the item cannot be played right now (e.g. empty playlist)
-      // or a new context is being set where the first track isn't the currentTrack (or currentTrack is null).
-      // The existing playTrack/playPlaylist calls handle this.
-      // However, if togglePlayPause was called (e.g. on a non-playable item),
-      // we should simply let it be a no-op or log.
-      // If the intent was to pause a currently playing DIFFERENT item, that's not standard behavior for clicking a new item.
-      // For now, if no specific play action is taken, we don't call togglePlayPause to avoid unintended global pause/resume.
       console.log("Item has no tracks to play or action determined:", item.title);
     }
   };
@@ -341,6 +339,46 @@ export default function BrowsePage() {
         </section>
       )}
 
+       <section>
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center">
+              <LibraryIcon className="w-7 h-7 mr-2 text-accent" /> Tu Colección Pública (Hi-Fi)
+            </h2>
+            <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-primary">Mostrar todo</Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-6 sm:gap-y-8">
+          {mockPublicLibraryTracks.map((track) => {
+             const isCurrentlyActiveItem = track.id === currentTrack?.id;
+            return (
+            <Card key={track.id} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => handlePlayItem(track)}>
+                <CardContent className="p-0">
+                    <Image
+                    src={track.artworkUrl}
+                    alt={track.title}
+                    width={300}
+                    height={300}
+                    className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
+                    data-ai-hint={track.dataAiHint || 'song track'}
+                    />
+                </CardContent>
+              <div className="p-3">
+                <CardTitle className="text-sm font-semibold truncate text-foreground">{track.title}</CardTitle>
+                <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+              </div>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-[calc(25%+0.75rem)] right-3 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
+                    onClick={(e) => handlePlayItem(track, e)}
+                    aria-label={`Play ${track.title}`}
+                    >
+                    {(isCurrentlyActiveItem && isPlaying) ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
+                </Button>
+            </Card>
+            );
+          })}
+        </div>
+      </section>
 
       <section>
         <div className="flex justify-between items-center mb-4">
@@ -351,7 +389,7 @@ export default function BrowsePage() {
           {mockNewReleaseAlbums.map((album) => {
              const isCurrentlyActiveItem = album.tracks?.some(track => track.id === currentTrack?.id) && 
                                            queue.some(qTrack => album.tracks?.find(iTrack => iTrack.id === qTrack.id)) &&
-                                           queue.length === (album.tracks?.length || 0) && // Ensure the entire queue is this album
+                                           queue.length === (album.tracks?.length || 0) && 
                                            album.tracks.every(aTrack => queue.some(qTrack => qTrack.id === aTrack.id));
              const canPlay = album.tracks && album.tracks.length > 0;
             return (
@@ -488,4 +526,4 @@ export default function BrowsePage() {
   );
 }
 
-    
+      
