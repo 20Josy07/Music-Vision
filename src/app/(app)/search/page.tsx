@@ -2,17 +2,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { usePlayer } from "@/contexts/PlayerContext";
 import type { Track } from "@/lib/types";
-import { searchJamendoTracks } from "@/services/jamendoService";
 import { Loader2, Music, Play, Pause, Search as SearchIcon } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 
+// Mock search results if needed for local testing without a backend search
+const MOCK_SEARCH_RESULTS: Track[] = [
+    // { id: 'search_s1', title: 'Found: Starry Night', artist: 'Cosmic Voyager', album: 'Galactic Dreams', duration: 210, artworkUrl: 'https://placehold.co/50x50/C7254E/FFFFFF.png?text=FSN', dataAiHint:"starry night", audioSrc:"/audio/inspiring-emotional-uplifting-piano.mp3", source: 'local' },
+    // { id: 'search_s2', title: 'Found: Urban Flow', artist: 'Metro Beats', album: 'City Rhythms', duration: 190, artworkUrl: 'https://placehold.co/50x50/7058A3/FFFFFF.png?text=FUF', dataAiHint:"urban city", audioSrc:"/audio/electronic-background-music.mp3", source: 'local' },
+];
+
+
 export default function SearchPage() {
-  const { playTrack, togglePlayPause, currentTrack, isPlaying, playPlaylist, queue } = usePlayer();
+  const { playTrack, togglePlayPause, currentTrack, isPlaying, playPlaylist } = usePlayer();
   const searchParams = useSearchParams();
   const query = searchParams.get('q');
 
@@ -30,8 +36,21 @@ export default function SearchPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const tracks = await searchJamendoTracks(searchTerm);
-      setSearchResults(tracks);
+      // Placeholder: Simulate API call or integrate Spotify search here if desired
+      console.log(`Simulating search for: ${searchTerm}`);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      // For now, use mock results or an empty array
+      // const tracks = await searchJamendoTracks(searchTerm); 
+      // setSearchResults(tracks);
+      if (MOCK_SEARCH_RESULTS.length > 0) {
+        setSearchResults(MOCK_SEARCH_RESULTS.filter(track => 
+            track.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            track.artist.toLowerCase().includes(searchTerm.toLowerCase())
+        ));
+      } else {
+        setSearchResults([]);
+      }
+
     } catch (e: any) {
       setError("Failed to fetch search results. Please try again.");
       console.error("Search error:", e);
@@ -46,11 +65,9 @@ export default function SearchPage() {
   }, [query, performSearch]);
 
   const handlePlayTrack = (track: Track, index: number) => {
-    // If this specific track is already current and playing, toggle pause
     if (currentTrack?.id === track.id && currentTrack.source === track.source) {
       togglePlayPause();
     } else {
-      // Play this track as part of the current search results queue
       playPlaylist(searchResults, index);
     }
   };
@@ -86,7 +103,7 @@ export default function SearchPage() {
       <div className="text-center py-10 text-muted-foreground">
         <SearchIcon className="mx-auto h-16 w-16 mb-4" />
         <p>No results found for &quot;{query}&quot;.</p>
-        <p className="text-sm">Try a different search term or check your spelling.</p>
+        <p className="text-sm">Search functionality is currently limited. Try connecting Spotify for more results.</p>
       </div>
     );
   }
@@ -133,24 +150,11 @@ export default function SearchPage() {
                 <p className="text-xs sm:text-sm text-muted-foreground w-12 sm:w-16 text-right tabular-nums flex-shrink-0">
                   {Math.floor(track.duration / 60)}:{String(track.duration % 60).padStart(2, '0')}
                 </p>
-                {/* Add MoreHorizontal button or other actions if needed */}
               </Card>
             );
           })}
         </div>
       </section>
-
-      {/* Placeholder for Album Results */}
-      {/* <section>
-        <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center"><Disc className="mr-3 h-6 w-6 text-primary"/> Albums</h2>
-        <p className="text-muted-foreground">Album search results will appear here.</p>
-      </section> */}
-
-      {/* Placeholder for Artist Results */}
-      {/* <section>
-        <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center"><Users className="mr-3 h-6 w-6 text-primary"/> Artists</h2>
-        <p className="text-muted-foreground">Artist search results will appear here.</p>
-      </section> */}
     </div>
   );
 }

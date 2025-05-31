@@ -22,12 +22,6 @@ const nextConfig: NextConfig = {
         hostname: 'i.scdn.co', // Spotify image CDN
         port: '',
         pathname: '/image/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'usercontent.jamendo.com',
-        port: '',
-        pathname: '/**', // Allows any path, including root for query-param based images
       }
     ],
   },
