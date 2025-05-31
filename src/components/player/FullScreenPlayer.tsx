@@ -2,14 +2,13 @@
 "use client";
 
 import Image from 'next/image';
-import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, MessageSquare, Loader2 } from 'lucide-react';
+import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, MessageSquare } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { LyricsDisplay } from '@/components/lyrics/LyricsDisplay';
-import { useEffect, useState, useCallback } from 'react';
-import { generateLyricInspiredImage, type GenerateLyricInspiredImageOutput } from '@/ai/flows/generate-lyric-inspired-image-flow';
+import { useEffect, useState } from 'react';
 
 function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -38,24 +37,11 @@ export function FullScreenPlayer() {
   const [isSeeking, setIsSeeking] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
 
-  const [lyricInspiredBgUrl, setLyricInspiredBgUrl] = useState<string | null>(null);
-  const [isGeneratingLyricBg, setIsGeneratingLyricBg] = useState(false);
-  const [firstLyricLineProcessedForTrackId, setFirstLyricLineProcessedForTrackId] = useState<string | null>(null);
-
-
   useEffect(() => {
     if (!isSeeking) {
       setDisplayProgress(playbackProgress);
     }
   }, [playbackProgress, isSeeking]);
-
-  // Reset lyric-inspired background and processing flag when track changes
-  useEffect(() => {
-    setLyricInspiredBgUrl(null);
-    setFirstLyricLineProcessedForTrackId(null); // Reset this flag when the track ID changes
-    // setIsGeneratingLyricBg(false); // Optionally reset loading state, though handleFirstLyricLine should control it
-  }, [currentTrack?.id]);
-
 
   const handleSeekCommit = (value: number[]) => {
     seek(value[0]);
@@ -71,47 +57,13 @@ export function FullScreenPlayer() {
     setShowLyrics(prev => !prev);
   };
 
-  const generateLyricImage = useCallback(async (lyricLine: string) => {
-    if (!currentTrack || !lyricLine) return;
-    console.log(`FullScreenPlayer: Attempting to generate image for track ${currentTrack.id} with lyric: "${lyricLine}"`);
-    setIsGeneratingLyricBg(true);
-    // setLyricInspiredBgUrl(null); // Clear previous image while generating new one - This might cause a flicker if generation is slow. Better to keep old one until new one is ready.
-
-    try {
-      const result: GenerateLyricInspiredImageOutput = await generateLyricInspiredImage({ lyricLine });
-      if (result.imageUrl) {
-        setLyricInspiredBgUrl(result.imageUrl);
-      } else {
-        console.warn("Lyric-inspired image generation did not return a URL. Will fallback to album art.");
-        setLyricInspiredBgUrl(null); 
-      }
-    } catch (error) {
-      console.error("Error generating lyric-inspired image:", error);
-      setLyricInspiredBgUrl(null); 
-    } finally {
-      setIsGeneratingLyricBg(false);
-    }
-  }, [currentTrack?.id]); // Depend on currentTrack.id for stability
-
-
-  const handleFirstLyricLine = useCallback(async (line: string) => {
-    if (currentTrack && currentTrack.id !== firstLyricLineProcessedForTrackId && !isGeneratingLyricBg) {
-      console.log(`FullScreenPlayer: Received first lyric line for track ${currentTrack.id}. Current processed ID: ${firstLyricLineProcessedForTrackId}. Initiating image generation.`);
-      setFirstLyricLineProcessedForTrackId(currentTrack.id);
-      await generateLyricImage(line);
-    } else {
-       console.log(`FullScreenPlayer: Skipped image generation. Track ID: ${currentTrack?.id}, Processed ID: ${firstLyricLineProcessedForTrackId}, Generating: ${isGeneratingLyricBg}`);
-    }
-  }, [currentTrack, generateLyricImage, isGeneratingLyricBg, firstLyricLineProcessedForTrackId]);
-
-
   if (!isFullScreenPlayerVisible || !currentTrack) {
     return null;
   }
 
   const totalDuration = currentTrack?.duration || 0;
   const currentTime = displayProgress * totalDuration;
-  const backgroundImageSrc = lyricInspiredBgUrl || currentTrack.artworkUrl;
+  const backgroundImageSrc = currentTrack.artworkUrl;
 
 
   return (
@@ -126,7 +78,7 @@ export function FullScreenPlayer() {
             sizes="100vw"
             style={{ objectFit: 'cover' }}
             className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125"
-            data-ai-hint={lyricInspiredBgUrl ? 'lyric art' : (currentTrack.dataAiHint || 'album art background')}
+            data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
           />
         </div>
@@ -144,7 +96,7 @@ export function FullScreenPlayer() {
           <X className="h-7 w-7" />
         </Button>
         <div className="flex items-center gap-2">
-          {isGeneratingLyricBg && <Loader2 className="h-5 w-5 animate-spin text-primary-foreground/60" />}
+          {/* Removed Loader2 for image generation */}
           <Button
             variant="ghost"
             size="icon"
@@ -191,9 +143,8 @@ export function FullScreenPlayer() {
               <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
             </div>
 
-            {/* Placeholder for waveform-like animation (CSS only for now) */}
             <div className="waveform-container my-3 md:my-4 h-8 flex items-center justify-center gap-0.5">
-              {[...Array(isPlaying ? 15 : 7)].map((_, i) => ( // More bars when playing
+              {[...Array(isPlaying ? 15 : 7)].map((_, i) => (
                 <div
                   key={i}
                   className={cn(
@@ -274,7 +225,8 @@ export function FullScreenPlayer() {
         {showLyrics && (
           <div className="w-full md:w-3/5 flex-1 flex flex-col overflow-hidden md:pl-4 lg:pl-8 mt-4 md:mt-0">
             <div className="relative flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary-foreground/20 scrollbar-track-transparent">
-              <LyricsDisplay track={currentTrack} currentTime={currentTime} onFirstLyricLineAvailable={handleFirstLyricLine} />
+              {/* Removed onFirstLyricLineAvailable prop */}
+              <LyricsDisplay track={currentTrack} currentTime={currentTime} />
             </div>
           </div>
         )}
@@ -282,3 +234,5 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
+    

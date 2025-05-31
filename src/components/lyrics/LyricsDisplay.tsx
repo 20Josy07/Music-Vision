@@ -12,7 +12,7 @@ import { Button } from '../ui/button';
 interface LyricsDisplayProps {
   track: Track;
   currentTime: number; // in seconds
-  onFirstLyricLineAvailable?: (line: string) => void; // Callback for the first lyric line
+  // Removed onFirstLyricLineAvailable prop
 }
 
 interface LyricLine {
@@ -65,7 +65,7 @@ function parseLRC(lrcContent: string | null | undefined): LyricLine[] {
 }
 
 
-export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }: LyricsDisplayProps) {
+export function LyricsDisplay({ track, currentTime }: LyricsDisplayProps) {
   const [parsedLyrics, setParsedLyrics] = useState<LyricLine[]>([]);
   const [plainLyrics, setPlainLyrics] = useState<string | null>(null);
   const [isInstrumental, setIsInstrumental] = useState(false);
@@ -73,7 +73,7 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
   const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(-1);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
-  const [processedTrackId, setProcessedTrackId] = useState<string | null>(null); // Track ID for which lyrics have been fetched/are fetching
+  const [processedTrackId, setProcessedTrackId] = useState<string | null>(null);
 
   const currentLineRef = useRef<HTMLParagraphElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -87,15 +87,14 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
       setIsInstrumental(false);
       setSourceUrl(null);
       setCurrentLineIndex(-1);
-      setProcessedTrackId(null); // Reset if track is invalid
+      setProcessedTrackId(null);
       setIsLoading(false);
       return;
     }
 
     if (track.id !== processedTrackId) {
-      setProcessedTrackId(track.id); // Mark this new track ID as the one we are processing.
+      setProcessedTrackId(track.id);
 
-      // Reset states for the new track before loading
       setIsLoading(true);
       setError(null);
       setParsedLyrics([]);
@@ -122,16 +121,11 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
               const newParsedLyrics = parseLRC(result.syncedLyrics);
               setParsedLyrics(newParsedLyrics);
               setPlainLyrics(null);
-              if (onFirstLyricLineAvailable && newParsedLyrics.length > 0) {
-                onFirstLyricLineAvailable(newParsedLyrics[0].line);
-              }
+              // Removed call to onFirstLyricLineAvailable
             } else if (result.plainLyrics) {
               setPlainLyrics(result.plainLyrics);
               setParsedLyrics([]);
-              if (onFirstLyricLineAvailable) {
-                const firstLine = result.plainLyrics.split('\n')[0];
-                if (firstLine) onFirstLyricLineAvailable(firstLine);
-              }
+              // Removed call to onFirstLyricLineAvailable
             } else {
               setError(result.message || "Lyrics not available for this song.");
             }
@@ -156,7 +150,7 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
       loadLyrics();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track, onFirstLyricLineAvailable, processedTrackId]); // Ensure processedTrackId is here to re-trigger IF it changes externally, though primarily set internally
+  }, [track, processedTrackId]);
 
   useEffect(() => {
     if (!parsedLyrics || parsedLyrics.length === 0) {
@@ -296,3 +290,5 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
     </div>
   );
 }
+
+    
