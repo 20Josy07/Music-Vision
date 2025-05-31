@@ -77,7 +77,7 @@ export function FullScreenPlayer() {
             fill
             sizes="100vw"
             style={{ objectFit: 'cover' }}
-            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125"
+            className="opacity-40 blur-3xl scale-125 saturate-150 contrast-125 animate-hue-cycle"
             data-ai-hint={currentTrack.dataAiHint || 'album art background'}
             priority
           />
@@ -96,7 +96,7 @@ export function FullScreenPlayer() {
           <X className="h-7 w-7" />
         </Button>
         <div className="flex items-center gap-2">
-          {/* Removed Loader2 for image generation */}
+          
           <Button
             variant="ghost"
             size="icon"
@@ -225,7 +225,7 @@ export function FullScreenPlayer() {
         {showLyrics && (
           <div className="w-full md:w-3/5 flex-1 flex flex-col overflow-hidden md:pl-4 lg:pl-8 mt-4 md:mt-0">
             <div className="relative flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-primary-foreground/20 scrollbar-track-transparent">
-              {/* Removed onFirstLyricLineAvailable prop */}
+              
               <LyricsDisplay track={currentTrack} currentTime={currentTime} />
             </div>
           </div>
@@ -234,5 +234,3 @@ export function FullScreenPlayer() {
     </div>
   );
 }
-
-    
