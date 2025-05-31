@@ -34,7 +34,7 @@ const mockJamendoAlbums: JamendoAlbum[] = [
 ];
 
 // --- Mapper Functions ---
-export function mapJamendoTrackToAppTrack(jamendoTrack: JamendoTrack): Track {
+function mapJamendoTrackToAppTrack(jamendoTrack: JamendoTrack): Track {
   return {
     id: jamendoTrack.id,
     title: jamendoTrack.name,
@@ -50,7 +50,7 @@ export function mapJamendoTrackToAppTrack(jamendoTrack: JamendoTrack): Track {
   };
 }
 
-export function mapJamendoAlbumToAppAlbum(jamendoAlbum: JamendoAlbum, tracks: Track[] = []): Album {
+function mapJamendoAlbumToAppAlbum(jamendoAlbum: JamendoAlbum, tracks: Track[] = []): Album {
   // In a real scenario, you'd fetch tracks for this album
   const mockTracksForAlbum = mockJamendoTracks
     .slice(0, 2) // take first 2 mock tracks for this album for now
@@ -150,3 +150,4 @@ async function fetchFromJamendo<T>(endpoint: string, params: Record<string, stri
     return null;
   }
 }
+
