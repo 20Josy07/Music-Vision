@@ -52,8 +52,8 @@ export function FullScreenPlayer() {
   // Reset lyric-inspired background and processing flag when track changes
   useEffect(() => {
     setLyricInspiredBgUrl(null);
-    setFirstLyricLineProcessedForTrackId(null);
-    setIsGeneratingLyricBg(false); // Stop any ongoing generation visual cue if track changes
+    setFirstLyricLineProcessedForTrackId(null); // Reset this flag when the track ID changes
+    // setIsGeneratingLyricBg(false); // Optionally reset loading state, though handleFirstLyricLine should control it
   }, [currentTrack?.id]);
 
 
@@ -73,36 +73,36 @@ export function FullScreenPlayer() {
 
   const generateLyricImage = useCallback(async (lyricLine: string) => {
     if (!currentTrack || !lyricLine) return;
-    console.log(`FullScreenPlayer: Generating image for track ${currentTrack.id} with lyric: "${lyricLine}"`);
+    console.log(`FullScreenPlayer: Attempting to generate image for track ${currentTrack.id} with lyric: "${lyricLine}"`);
     setIsGeneratingLyricBg(true);
-    setLyricInspiredBgUrl(null); // Clear previous image while generating new one
+    // setLyricInspiredBgUrl(null); // Clear previous image while generating new one - This might cause a flicker if generation is slow. Better to keep old one until new one is ready.
 
     try {
       const result: GenerateLyricInspiredImageOutput = await generateLyricInspiredImage({ lyricLine });
       if (result.imageUrl) {
         setLyricInspiredBgUrl(result.imageUrl);
       } else {
-        console.warn("Lyric-inspired image generation did not return a URL.");
-        setLyricInspiredBgUrl(null); // Fallback to album art if generation fails
+        console.warn("Lyric-inspired image generation did not return a URL. Will fallback to album art.");
+        setLyricInspiredBgUrl(null); 
       }
     } catch (error) {
       console.error("Error generating lyric-inspired image:", error);
-      setLyricInspiredBgUrl(null); // Fallback to album art on error
+      setLyricInspiredBgUrl(null); 
     } finally {
       setIsGeneratingLyricBg(false);
     }
-  }, [currentTrack?.id, setIsGeneratingLyricBg, setLyricInspiredBgUrl]); // Depend on currentTrack.id for stability
+  }, [currentTrack?.id]); // Depend on currentTrack.id for stability
 
 
   const handleFirstLyricLine = useCallback(async (line: string) => {
-    if (currentTrack && currentTrack.id !== firstLyricLineProcessedForTrackId && !isGeneratingLyricBg && !lyricInspiredBgUrl) {
-      console.log(`FullScreenPlayer: Received first lyric line for track ${currentTrack.id}. Current processed ID: ${firstLyricLineProcessedForTrackId}`);
+    if (currentTrack && currentTrack.id !== firstLyricLineProcessedForTrackId && !isGeneratingLyricBg) {
+      console.log(`FullScreenPlayer: Received first lyric line for track ${currentTrack.id}. Current processed ID: ${firstLyricLineProcessedForTrackId}. Initiating image generation.`);
       setFirstLyricLineProcessedForTrackId(currentTrack.id);
       await generateLyricImage(line);
     } else {
-      console.log(`FullScreenPlayer: Skipped image generation. Track ID: ${currentTrack?.id}, Processed ID: ${firstLyricLineProcessedForTrackId}, Generating: ${isGeneratingLyricBg}, Has URL: ${!!lyricInspiredBgUrl}`);
+       console.log(`FullScreenPlayer: Skipped image generation. Track ID: ${currentTrack?.id}, Processed ID: ${firstLyricLineProcessedForTrackId}, Generating: ${isGeneratingLyricBg}`);
     }
-  }, [currentTrack, generateLyricImage, isGeneratingLyricBg, lyricInspiredBgUrl, firstLyricLineProcessedForTrackId]);
+  }, [currentTrack, generateLyricImage, isGeneratingLyricBg, firstLyricLineProcessedForTrackId]);
 
 
   if (!isFullScreenPlayerVisible || !currentTrack) {
@@ -119,7 +119,7 @@ export function FullScreenPlayer() {
       {backgroundImageSrc && (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <Image
-            key={backgroundImageSrc} // Add key to force re-render on src change
+            key={backgroundImageSrc} 
             src={backgroundImageSrc}
             alt="Dynamic background artwork"
             fill
@@ -191,15 +191,37 @@ export function FullScreenPlayer() {
               <p className="text-sm sm:text-base lg:text-lg text-primary-foreground/60 truncate">{currentTrack.artist}</p>
             </div>
 
-            <div className="waveform-container my-3 md:my-4">
-              {[...Array(7)].map((_, i) => (
+            {/* Placeholder for waveform-like animation (CSS only for now) */}
+            <div className="waveform-container my-3 md:my-4 h-8 flex items-center justify-center gap-0.5">
+              {[...Array(isPlaying ? 15 : 7)].map((_, i) => ( // More bars when playing
                 <div
                   key={i}
-                  className="waveform-bar"
-                  style={{ animationDelay: `${i * 0.15}s` }}
+                  className={cn(
+                    "waveform-bar bg-primary-foreground/60 rounded-full w-1 transition-all duration-300 ease-in-out",
+                    isPlaying && "animate-waveform-pulse"
+                  )}
+                  style={{ 
+                    height: isPlaying ? `${Math.random() * 75 + 25}%` : '25%',
+                    animationDelay: isPlaying ? `${i * 0.05}s` : undefined,
+                    opacity: isPlaying ? (Math.random() * 0.5 + 0.5) : 0.6,
+                  }}
                 />
               ))}
             </div>
+            
+            <style jsx global>{`
+              @keyframes waveform-pulse {
+                0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+                50% { transform: scaleY(1); opacity: 1; }
+              }
+              .animate-waveform-pulse {
+                animation-name: waveform-pulse;
+                animation-duration: 0.8s;
+                animation-iteration-count: infinite;
+                animation-timing-function: ease-in-out;
+              }
+            `}</style>
+
 
             <div className="flex items-center gap-2 w-full mb-2 md:mb-3">
               <span className="text-xs text-primary-foreground w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
