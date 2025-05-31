@@ -560,7 +560,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isSpotifyConnected && spotifyApi.getAccessToken()) {
       syncWithSpotifyPlayback(); 
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
-      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 50 : 50; 
+      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1000 : 50; 
       syncIntervalRef.current = setInterval(() => syncWithSpotifyPlayback(), interval);
     } else {
         if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
