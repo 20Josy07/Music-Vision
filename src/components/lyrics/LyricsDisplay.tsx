@@ -156,7 +156,7 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
       loadLyrics();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track, onFirstLyricLineAvailable]); // processedTrackId is intentionally NOT a dependency here
+  }, [track, onFirstLyricLineAvailable, processedTrackId]); // Ensure processedTrackId is here to re-trigger IF it changes externally, though primarily set internally
 
   useEffect(() => {
     if (!parsedLyrics || parsedLyrics.length === 0) {
@@ -236,7 +236,7 @@ export function LyricsDisplay({ track, currentTime, onFirstLyricLineAvailable }:
               key={`${line.time}-${index}-${Math.random()}`}
               ref={index === currentLineIndex ? currentLineRef : null}
               className={cn(
-                "text-xl md:text-2xl lg:text-3xl font-medium my-3 md:my-4 leading-relaxed transition-all duration-300 ease-in-out",
+                "text-xl md:text-2xl lg:text-3xl font-medium my-3 md:my-4 leading-relaxed transition-all duration-500 ease-out",
                 index === currentLineIndex
                   ? "text-primary-foreground scale-100 opacity-100 font-semibold"
                   : "text-primary-foreground/60 opacity-70 scale-95"
