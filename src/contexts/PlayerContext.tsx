@@ -34,6 +34,7 @@ const mapSpotifyItemToAppTrack = (item: SpotifyTrackItem): Track => ({
   audioSrc: item.preview_url || undefined, 
   spotifyUri: item.uri,
   isSpotifyTrack: true,
+  source: 'spotify',
   dataAiHint: `${item.name.substring(0,15)} ${item.artists[0]?.name.substring(0,10) || 'song'}`.toLowerCase(),
 });
 
@@ -559,7 +560,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (isSpotifyConnected && spotifyApi.getAccessToken()) {
       syncWithSpotifyPlayback(); 
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
-      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 1500 : 50; 
+      const interval = (isFullScreenPlayerVisible && currentTrack?.isSpotifyTrack) ? 50 : 50; 
       syncIntervalRef.current = setInterval(() => syncWithSpotifyPlayback(), interval);
     } else {
         if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
