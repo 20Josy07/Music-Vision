@@ -3,102 +3,82 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-}
-
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Light mode background - White */
-    --foreground: 288 7% 10%; /* Light mode foreground - Dark (from original dark bg) */
-
-    --card: 0 0% 96%; /* Light Card */
-    --card-foreground: 288 7% 10%;
-
-    --popover: 0 0% 94%; /* Light Popover */
-    --popover-foreground: 288 7% 10%;
-
-    --primary: 344 65% 47%; /* Original Primary: #C7254E */
-    --primary-foreground: 0 0% 98%; /* Light text on primary */
-
-    --secondary: 0 0% 90%; /* Light Secondary */
-    --secondary-foreground: 288 7% 10%;
-
-    --muted: 0 0% 85%; /* Light Muted */
-    --muted-foreground: 0 0% 40%;
-
-    --accent: 258 30% 50%; /* Original Accent: #7058A3 */
-    --accent-foreground: 0 0% 98%; /* Light text on accent */
-
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
 
-    --border: 0 0% 80%; /* Light Border */
-    --input: 0 0% 80%; /* Light Input */
-    --ring: 258 30% 55%; /* Based on Original Accent */
+    /* Sidebar specific colors - align with main theme */
+    --sidebar-background: 0 0% 98%; 
+    --sidebar-foreground: 222.2 84% 7%; /* Darker foreground for light sidebar */
+    --sidebar-border: 0 0% 90%;
+    --sidebar-accent: 210 40% 96.1%; 
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-primary: 221.2 83.2% 53.3%; 
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-ring: 221.2 83.2% 53.3%;
 
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-
-    /* Sidebar specific colors - align with main theme */
-    --sidebar-background: 0 0% 98%; 
-    --sidebar-foreground: 288 7% 15%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-accent: 258 30% 50%; 
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 344 65% 47%; 
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-ring: 258 30% 55%;
   }
 
   .dark {
-    --background: 240 10% 4%; /* Near black */
-    --foreground: 0 0% 98%; /* White */
-
-    --card: 240 10% 10%; 
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 7%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 217 91% 60%; /* Blue (e.g., Tailwind blue-500) */
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 5% 15%; 
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 5% 25%; 
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 150 70% 45%; /* Emerald/Green */
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 72% 51%; /* Adjusted destructive for dark theme */
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5% 18%; 
-    --input: 240 5% 18%; 
-    --ring: 217 91% 70%; /* Lighter blue for ring */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%; /* Adjusted for better contrast on dark primary */
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.5% 48%; /* Ring color for dark theme */
+    
+    /* Sidebar specific colors for new dark theme */
+    --sidebar-background: 222.2 84% 6%; /* Slightly lighter than main dark bg, but still very dark */
+    --sidebar-foreground: 210 40% 90%; /* Slightly off-white */
+    --sidebar-border: 217.2 32.6% 15%; /* Darker border for sidebar */
+    --sidebar-accent: 217.2 32.6% 22%; /* Dark accent for sidebar */
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-primary: 217.2 91.2% 59.8%; /* Using main dark primary */
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-ring: 224.3 76.5% 48%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-
-    /* Sidebar specific colors for new dark theme */
-    --sidebar-background: 240 10% 6%; /* Slightly lighter than main dark bg */
-    --sidebar-foreground: 0 0% 90%; /* Slightly off-white */
-    --sidebar-border: 240 5% 15%;
-    --sidebar-accent: 150 70% 45%; /* Emerald */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 217 91% 60%; /* Blue */
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-ring: 217 91% 70%;
   }
 }
 
@@ -112,8 +92,69 @@ body {
   }
 }
 
-/* Keeping hue-cycle and pan-zoom animations */
 @layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom animations */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px var(--primary-glow, rgba(168, 85, 247, 0.4)); /* Using a CSS var for color */
+    }
+    50% {
+      box-shadow: 0 0 30px var(--primary-glow-stronger, rgba(168, 85, 247, 0.6)); /* Using a CSS var for color */
+    }
+  }
+  
+  :root { /* Define glow colors, can be overridden in .dark */
+    --primary-glow: hsla(var(--primary) / 0.4);
+    --primary-glow-stronger: hsla(var(--primary) / 0.6);
+  }
+
+  .dark {
+     --primary-glow: hsla(var(--primary) / 0.3); /* Slightly subtler glow for dark theme */
+     --primary-glow-stronger: hsla(var(--primary) / 0.5);
+  }
+
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  /* Glass morphism effects */
+  .glass {
+    background: rgba(255, 255, 255, 0.05); /* Subtler alpha for light theme */
+    backdrop-filter: blur(10px); /* Reduced blur for potentially better perf */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .glass-dark {
+    background: rgba(30, 30, 30, 0.2); /* Adjusted for dark theme */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Keeping hue-cycle and pan-zoom animations from previous version if still needed */
   @keyframes hue-cycle {
     0% {
       filter: hue-rotate(0deg) brightness(100%);
