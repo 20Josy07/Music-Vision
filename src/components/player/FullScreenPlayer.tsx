@@ -45,6 +45,7 @@ export function FullScreenPlayer() {
   }, [playbackProgress, isSeeking]);
 
   useEffect(() => {
+    // Reset to album art view when track changes
     setLyricsViewActive(false);
   }, [currentTrack?.id]);
 
@@ -111,60 +112,63 @@ export function FullScreenPlayer() {
         {!lyricsViewActive ? (
           // Album Art View
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square relative shadow-2xl rounded-lg overflow-hidden mb-6">
-              {currentTrack.artworkUrl && (
-                <Image
-                  src={currentTrack.artworkUrl}
-                  alt={currentTrack.title}
-                  fill
-                  sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, 448px" // Adjusted sizes based on new max-w
-                  className="object-cover"
-                  data-ai-hint={currentTrack.dataAiHint || 'album art'}
-                />
-              )}
-            </div>
-            <div className="w-full max-w-md px-2 md:px-0 text-center mt-2 space-y-4">
-              <div> {/* Group for title/artist */}
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Avatar className="h-5 w-5">
-                      <AvatarImage src={currentTrack.artworkUrl} alt={currentTrack.artist} />
-                      <AvatarFallback>{currentTrack.artist?.substring(0,1) || 'A'}</AvatarFallback>
-                  </Avatar>
-                  <h2 className="text-xl sm:text-2xl truncate text-primary-foreground font-bold">{currentTrack.title}</h2>
+            {/* Wrapper for artwork and info/controls to manage space with justify-center */}
+            <div className="flex flex-col items-center">
+              <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square relative shadow-2xl rounded-lg overflow-hidden mb-6">
+                {currentTrack.artworkUrl && (
+                  <Image
+                    src={currentTrack.artworkUrl}
+                    alt={currentTrack.title}
+                    fill
+                    sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, 448px"
+                    className="object-cover animate-subtle-bg-pan-zoom"
+                    data-ai-hint={currentTrack.dataAiHint || 'album art'}
+                  />
+                )}
+              </div>
+              <div className="w-full max-w-md px-2 md:px-0 text-center mt-2 space-y-4">
+                <div> {/* Group for title/artist */}
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Avatar className="h-5 w-5">
+                        <AvatarImage src={currentTrack.artworkUrl} alt={currentTrack.artist} />
+                        <AvatarFallback>{currentTrack.artist?.substring(0,1) || 'A'}</AvatarFallback>
+                    </Avatar>
+                    <h2 className="text-xl sm:text-2xl truncate text-primary-foreground font-bold">{currentTrack.title}</h2>
+                  </div>
+                  <p className="text-sm sm:text-base text-primary-foreground/70 truncate">{currentTrack.artist}</p>
                 </div>
-                <p className="text-sm sm:text-base text-primary-foreground/70 truncate">{currentTrack.artist}</p>
-              </div>
 
-              <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-primary-foreground/80 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
-                <Slider
-                  value={[displayProgress]} max={1} step={0.01}
-                  onValueChange={handleProgressChange} onValueCommit={handleSeekCommit}
-                  className="w-full [&>span]:h-1.5 [&>span]:bg-neutral-600 [&>span>span]:bg-primary-foreground"
-                  thumbClassName="h-3.5 w-3.5 border-primary-foreground bg-primary-foreground"
-                  aria-label="Playback progress"
-                />
-                <span className="text-xs text-primary-foreground/80 w-10 tabular-nums">-{formatTime(Math.max(0, totalDuration - currentTime))}</span>
-              </div>
+                <div className="flex items-center gap-2 w-full">
+                  <span className="text-xs text-primary-foreground/80 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+                  <Slider
+                    value={[displayProgress]} max={1} step={0.01}
+                    onValueChange={handleProgressChange} onValueCommit={handleSeekCommit}
+                    className="w-full [&>span]:h-1.5 [&>span]:bg-neutral-600 [&>span>span]:bg-primary-foreground"
+                    thumbClassName="h-3.5 w-3.5 border-primary-foreground bg-primary-foreground"
+                    aria-label="Playback progress"
+                  />
+                  <span className="text-xs text-primary-foreground/80 w-10 tabular-nums">-{formatTime(Math.max(0, totalDuration - currentTime))}</span>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon" onClick={toggleShuffle} className={cn("text-primary-foreground/70 hover:text-primary-foreground h-10 w-10", shuffle && "text-primary")}>
-                  <Shuffle className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={playPrevious} className="text-primary-foreground hover:text-primary-foreground/80 h-12 w-12">
-                  <SkipBack className="h-7 w-7 fill-current" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-16 w-16 rounded-full hover:bg-primary-foreground/10 text-primary-foreground">
-                  {isPlaying ? <Pause className="h-9 w-9 fill-current" /> : <Play className="h-9 w-9 fill-current" />}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={playNext} className="text-primary-foreground hover:text-primary-foreground/80 h-12 w-12">
-                  <SkipForward className="h-7 w-7 fill-current" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={cycleRepeatMode} className={cn("text-primary-foreground/70 hover:text-primary-foreground h-10 w-10", (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary")}>
-                  {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="icon" onClick={toggleShuffle} className={cn("text-primary-foreground/70 hover:text-primary-foreground h-10 w-10", shuffle && "text-primary")}>
+                    <Shuffle className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={playPrevious} className="text-primary-foreground hover:text-primary-foreground/80 h-12 w-12">
+                    <SkipBack className="h-7 w-7 fill-current" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-16 w-16 rounded-full hover:bg-primary-foreground/10 text-primary-foreground">
+                    {isPlaying ? <Pause className="h-9 w-9 fill-current" /> : <Play className="h-9 w-9 fill-current" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={playNext} className="text-primary-foreground hover:text-primary-foreground/80 h-12 w-12">
+                    <SkipForward className="h-7 w-7 fill-current" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={cycleRepeatMode} className={cn("text-primary-foreground/70 hover:text-primary-foreground h-10 w-10", (repeatMode !== 'none' && repeatMode !== 'off') && "text-primary")}>
+                    {(repeatMode === 'one' || repeatMode === 'track') ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </div> {/* End of wrapper for artwork and info/controls */}
             <Button variant="ghost" onClick={() => setLyricsViewActive(true)} className="mt-auto mb-2 text-xs text-primary-foreground/60 hover:text-primary-foreground">
               <ChevronUp className="mr-1 h-4 w-4" /> Swipe Up for Lyrics (Click)
             </Button>
