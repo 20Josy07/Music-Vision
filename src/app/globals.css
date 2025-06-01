@@ -18,7 +18,7 @@ body {
     --popover: 0 0% 94%; /* Light Popover */
     --popover-foreground: 288 7% 10%;
 
-    --primary: 344 65% 47%; /* #C7254E */
+    --primary: 344 65% 47%; /* Original Primary: #C7254E */
     --primary-foreground: 0 0% 98%; /* Light text on primary */
 
     --secondary: 0 0% 90%; /* Light Secondary */
@@ -27,7 +27,7 @@ body {
     --muted: 0 0% 85%; /* Light Muted */
     --muted-foreground: 0 0% 40%;
 
-    --accent: 258 30% 50%; /* #7058A3 */
+    --accent: 258 30% 50%; /* Original Accent: #7058A3 */
     --accent-foreground: 0 0% 98%; /* Light text on accent */
 
     --destructive: 0 84.2% 60.2%;
@@ -35,7 +35,7 @@ body {
 
     --border: 0 0% 80%; /* Light Border */
     --input: 0 0% 80%; /* Light Input */
-    --ring: 258 30% 55%; /* Based on Accent */
+    --ring: 258 30% 55%; /* Based on Original Accent */
 
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -45,44 +45,44 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific colors - align with main theme */
-    --sidebar-background: 0 0% 98%; /* Slightly off-white for light theme sidebar */
+    --sidebar-background: 0 0% 98%; 
     --sidebar-foreground: 288 7% 15%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-accent: 258 30% 50%; /* Use main accent */
+    --sidebar-accent: 258 30% 50%; 
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 344 65% 47%; /* Use main primary */
+    --sidebar-primary: 344 65% 47%; 
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-ring: 258 30% 55%;
   }
 
   .dark {
-    --background: 288 7% 10%; /* #1A171B - Dark mode background */
-    --foreground: 0 0% 98%; /* Dark mode foreground - Light */
+    --background: 240 10% 4%; /* Near black */
+    --foreground: 0 0% 98%; /* White */
 
-    --card: 288 7% 12%; /* Dark Card - slightly lighter than bg */
+    --card: 240 10% 10%; 
     --card-foreground: 0 0% 98%;
 
-    --popover: 288 7% 15%; /* Dark Popover */
+    --popover: 240 10% 7%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 344 65% 47%; /* #C7254E */
+    --primary: 217 91% 60%; /* Blue (e.g., Tailwind blue-500) */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 288 7% 15%; /* Dark Secondary */
+    --secondary: 240 5% 15%; 
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 288 7% 20%; /* Dark Muted */
-    --muted-foreground: 0 0% 60%;
+    --muted: 240 5% 25%; 
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 258 30% 50%; /* #7058A3 */
+    --accent: 150 70% 45%; /* Emerald/Green */
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 72% 51%; /* Adjusted destructive for dark theme */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 288 7% 25%; /* Dark Border */
-    --input: 288 7% 25%; /* Dark Input */
-    --ring: 258 30% 55%; /* Based on Accent */
+    --border: 240 5% 18%; 
+    --input: 240 5% 18%; 
+    --ring: 217 91% 70%; /* Lighter blue for ring */
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -90,15 +90,15 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* Sidebar specific colors for dark theme */
-    --sidebar-background: 288 7% 8%; /* Slightly darker/variant for dark theme sidebar */
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-border: 288 7% 20%;
-    --sidebar-accent: 258 30% 50%;
+    /* Sidebar specific colors for new dark theme */
+    --sidebar-background: 240 10% 6%; /* Slightly lighter than main dark bg */
+    --sidebar-foreground: 0 0% 90%; /* Slightly off-white */
+    --sidebar-border: 240 5% 15%;
+    --sidebar-accent: 150 70% 45%; /* Emerald */
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 344 65% 47%;
+    --sidebar-primary: 217 91% 60%; /* Blue */
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-ring: 258 30% 55%;
+    --sidebar-ring: 217 91% 70%;
   }
 }
 
@@ -112,20 +112,28 @@ body {
   }
 }
 
-/* Adding hue-cycle animation */
+/* Keeping hue-cycle and pan-zoom animations */
 @layer utilities {
   @keyframes hue-cycle {
     0% {
       filter: hue-rotate(0deg) brightness(100%);
     }
     50% {
-      filter: hue-rotate(180deg) brightness(120%); /* Slight brightness increase for dynamism */
+      filter: hue-rotate(180deg) brightness(120%);
     }
     100% {
       filter: hue-rotate(360deg) brightness(100%);
     }
   }
   .animate-hue-cycle {
-    animation: hue-cycle 20s infinite linear; /* Slower, linear animation */
+    animation: hue-cycle 20s infinite linear;
+  }
+
+  @keyframes subtle-bg-pan-zoom {
+    0% { transform: scale(1.25) translate(-1%, -1%); }
+    100% { transform: scale(1.30) translate(1%, 1%); }
+  }
+  .animate-subtle-bg-pan-zoom {
+    animation: subtle-bg-pan-zoom 40s ease-in-out infinite alternate;
   }
 }
