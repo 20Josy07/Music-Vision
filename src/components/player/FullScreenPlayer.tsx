@@ -2,13 +2,13 @@
 "use client";
 
 import Image from 'next/image';
-import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, ChevronLeft, MoreVertical, ChevronUp, Music2 } from 'lucide-react';
+import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, ChevronLeft, MoreVertical, ChevronUp, Music2, Loader2 } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { LyricsDisplay } from '@/components/lyrics/LyricsDisplay';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function formatTime(seconds: number): string {
@@ -37,6 +37,7 @@ export function FullScreenPlayer() {
   const [displayProgress, setDisplayProgress] = useState(playbackProgress);
   const [isSeeking, setIsSeeking] = useState(false);
   const [lyricsViewActive, setLyricsViewActive] = useState(false);
+  const [firstLyricLineProcessedForTrackId, setFirstLyricLineProcessedForTrackId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isSeeking) {
@@ -45,9 +46,12 @@ export function FullScreenPlayer() {
   }, [playbackProgress, isSeeking]);
 
   useEffect(() => {
-    // Reset to album art view when track changes
+    // Reset to album art view and clear processed flag when track changes
     setLyricsViewActive(false);
-  }, [currentTrack?.id]);
+    if (currentTrack?.id !== firstLyricLineProcessedForTrackId) {
+      setFirstLyricLineProcessedForTrackId(null);
+    }
+  }, [currentTrack?.id, firstLyricLineProcessedForTrackId]);
 
 
   const handleSeekCommit = (value: number[]) => {
@@ -112,8 +116,7 @@ export function FullScreenPlayer() {
         {!lyricsViewActive ? (
           // Album Art View
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-            {/* Wrapper for artwork and info/controls to manage space with justify-center */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center"> {/* Wrapper for artwork and info/controls */}
               <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square relative shadow-2xl rounded-lg overflow-hidden mb-6">
                 {currentTrack.artworkUrl && (
                   <Image
@@ -121,7 +124,7 @@ export function FullScreenPlayer() {
                     alt={currentTrack.title}
                     fill
                     sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, 448px"
-                    className="object-cover animate-subtle-bg-pan-zoom"
+                    className="object-cover"
                     data-ai-hint={currentTrack.dataAiHint || 'album art'}
                   />
                 )}
@@ -168,9 +171,9 @@ export function FullScreenPlayer() {
                   </Button>
                 </div>
               </div>
-            </div> {/* End of wrapper for artwork and info/controls */}
+            </div>
             <Button variant="ghost" onClick={() => setLyricsViewActive(true)} className="mt-auto mb-2 text-xs text-primary-foreground/60 hover:text-primary-foreground">
-              <ChevronUp className="mr-1 h-4 w-4" /> Swipe Up for Lyrics (Click)
+               <ChevronUp className="mr-1 h-4 w-4" /> Swipe Up for Lyrics (Click)
             </Button>
           </div>
         ) : (
@@ -223,3 +226,4 @@ export function FullScreenPlayer() {
     </div>
   );
 }
+
