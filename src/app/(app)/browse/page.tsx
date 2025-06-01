@@ -21,13 +21,12 @@ import { useRouter } from 'next/navigation';
 interface QuickPickItem {
   id: string;
   title: string;
-  artist?: string; // For "Popular" section to show artist
+  artist?: string;
   artworkUrl: string;
   dataAiHint: string;
   type: 'album' | 'playlist' | 'track';
   tracks?: Track[];
   track?: Track;
-  colorClass?: string;
 }
 
 const mockPopularItems: QuickPickItem[] = [
@@ -157,83 +156,90 @@ export default function BrowsePage() {
   };
 
   return (
-    <div className="space-y-8">
-      <section className="px-0 md:px-0">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 md:mb-6 leading-tight">
-          Find The Best <br className="md:hidden" />Music For Your <br className="md:hidden" />Daily Music
-        </h1>
-        <form onSubmit={handleSearchSubmit} className="relative mb-6 md:mb-8">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full h-12 text-base bg-muted/50 border-transparent focus:bg-card focus:border-primary"
-            aria-label="Search music"
-          />
-        </form>
-      </section>
+    <div className="relative min-h-full bg-gradient-to-br from-background to-accent/10 text-foreground flex flex-col overflow-hidden">
+      {/* Background Effects - adapted for current theme variables */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent"></div>
 
-      <section>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Popular</h2>
-          <Button variant="link" asChild>
-            <Link href="/library/songs">View All</Link>
-          </Button>
-        </div>
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex space-x-4 pb-4">
-            {mockPopularItems.map((item) => {
-              const isActive = (item.type === 'track' && item.track?.id === currentTrack?.id && item.track.source === currentTrack.source) ||
-                               (item.tracks && item.tracks.some(t => t.id === currentTrack?.id && t.source === currentTrack.source));
-              const canPlay = (item.type === 'track' && item.track) || (item.tracks && item.tracks.length > 0);
-              return(
-              <Card
-                key={item.id}
-                className="group relative w-36 min-w-36 sm:w-40 sm:min-w-40 overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer"
-                onClick={() => canPlay && handlePlayItem(item)}
-              >
-                <CardContent className="p-0">
-                  <Image
-                    src={item.artworkUrl}
-                    alt={item.title}
-                    width={160}
-                    height={160}
-                    className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
-                    data-ai-hint={item.dataAiHint}
-                  />
-                </CardContent>
-                <div className="p-2.5">
-                  <p className="text-sm font-semibold truncate text-foreground">{item.title}</p>
-                  {item.artist && <p className="text-xs text-muted-foreground truncate">{item.artist}</p>}
-                </div>
-                {canPlay && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute bottom-[calc(25%+0.5rem)] right-2 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
-                    onClick={(e) => handlePlayItem(item, e)}
-                    aria-label={`Play ${item.title}`}
-                  >
-                    {(isActive && isPlaying) ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
-                  </Button>
-                )}
-              </Card>
-            )})}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </section>
-
-      {isLoadingSpotify ? (
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">Tus Top Tracks (Spotify)</h2>
-          <p className="text-muted-foreground">Cargando tus tracks de Spotify...</p>
+      <div className="relative z-10 space-y-8 p-0 md:p-0"> {/* Removed page padding for sections to control their own */}
+        <section className="px-4 md:px-6 pt-4 md:pt-6"> {/* Added padding here */}
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 md:mb-6 leading-tight">
+            Find The Best <br className="md:hidden" />Music For Your <br className="md:hidden" />Daily Music
+          </h1>
+          <form onSubmit={handleSearchSubmit} className="relative mb-6 md:mb-8">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search for songs, artists, albums..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full h-12 text-base bg-background/70 border-border/50 focus:bg-card focus:border-primary backdrop-blur-sm"
+              aria-label="Search music"
+            />
+          </form>
         </section>
-      ) : spotifyError && !isSpotifyConnected ? (
-         <section>
-            <Card className="p-4 bg-card/80 border-border/50">
+
+        {/* Popular Section */}
+        <section className="px-4 md:px-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Popular</h2>
+            <Button variant="link" asChild className="text-sm">
+              <Link href="/library/songs">View All</Link>
+            </Button>
+          </div>
+          <ScrollArea className="w-full whitespace-nowrap -mx-4 md:-mx-6 px-4 md:px-6"> {/* Offset negative margin for full-bleed scroll */}
+            <div className="flex space-x-4 pb-4">
+              {mockPopularItems.map((item) => {
+                const isActive = (item.type === 'track' && item.track?.id === currentTrack?.id && item.track.source === currentTrack.source) ||
+                                 (item.tracks && item.tracks.some(t => t.id === currentTrack?.id && t.source === currentTrack.source));
+                const canPlay = (item.type === 'track' && item.track) || (item.tracks && item.tracks.length > 0);
+                return(
+                <Card
+                  key={item.id}
+                  className="group relative w-36 min-w-36 sm:w-40 sm:min-w-40 overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card/80 backdrop-blur-sm rounded-lg cursor-pointer border-border/30"
+                  onClick={() => canPlay && handlePlayItem(item)}
+                >
+                  <CardContent className="p-0">
+                    <Image
+                      src={item.artworkUrl}
+                      alt={item.title}
+                      width={160}
+                      height={160}
+                      className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
+                      data-ai-hint={item.dataAiHint}
+                    />
+                  </CardContent>
+                  <div className="p-2.5">
+                    <p className="text-sm font-semibold truncate text-foreground">{item.title}</p>
+                    {item.artist && <p className="text-xs text-muted-foreground truncate">{item.artist}</p>}
+                  </div>
+                  {canPlay && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute bottom-[calc(25%+0.5rem)] right-2 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
+                      onClick={(e) => handlePlayItem(item, e)}
+                      aria-label={`Play ${item.title}`}
+                    >
+                      {(isActive && isPlaying) ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+                    </Button>
+                  )}
+                </Card>
+              )})}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </section>
+
+        {/* Top Tracks Section - Spotify */}
+        <section className="px-4 md:px-6">
+          {isLoadingSpotify ? (
+            <>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">Tus Top Tracks (Spotify)</h2>
+              <p className="text-muted-foreground">Cargando tus tracks de Spotify...</p>
+            </>
+          ) : spotifyError && !isSpotifyConnected ? (
+            <Card className="p-4 bg-card/80 border-border/50 backdrop-blur-sm">
                 <CardTitle className="text-foreground text-lg flex items-center">
                     <SpotifyIcon className="w-6 h-6 mr-2 text-green-500" /> Conectar a Spotify
                 </CardTitle>
@@ -244,72 +250,73 @@ export default function BrowsePage() {
                     </Link>
                 </CardContent>
             </Card>
-        </section>
-      ) : spotifyError ? (
-         <section>
-            <Card className="p-4 bg-destructive/10 border-destructive/30">
+          ) : spotifyError ? (
+            <Card className="p-4 bg-destructive/10 border-destructive/30 backdrop-blur-sm">
                 <CardTitle className="text-destructive text-lg">Error de Spotify</CardTitle>
                 <CardContent className="text-destructive/90 pt-2 text-sm">
                     <p>{spotifyError}</p>
                 </CardContent>
             </Card>
+          ) : topSpotifyTracks.length > 0 ? (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center">
+                    <SpotifyIcon className="w-7 h-7 mr-2 text-green-500" /> Tus Top Tracks (Spotify)
+                  </h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6 sm:gap-x-6 sm:gap-y-8">
+                {topSpotifyTracks.map((track) => {
+                  const isCurrentlyActiveItem = track.id === currentTrack?.id && track.source === currentTrack?.source;
+                  return (
+                  <Card key={`${track.source}-${track.id}`} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card/80 backdrop-blur-sm rounded-lg cursor-pointer border-border/30" onClick={() => handlePlayItem(track)}>
+                      <CardContent className="p-0">
+                          <Image
+                          src={track.artworkUrl}
+                          alt={track.title}
+                          width={300}
+                          height={300}
+                          className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
+                          data-ai-hint={track.dataAiHint || 'song track'}
+                          />
+                      </CardContent>
+                    <div className="p-3">
+                      <CardTitle className="text-sm font-semibold truncate text-foreground">{track.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute bottom-[calc(25%+0.75rem)] right-3 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
+                        onClick={(e) => handlePlayItem(track, e)}
+                        aria-label={`Play ${track.title}`}
+                      >
+                        {(isCurrentlyActiveItem && isPlaying) ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
+                      </Button>
+                  </Card>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">Tus Top Tracks (Spotify)</h2>
+              <p className="text-muted-foreground">No hay top tracks para mostrar. ¡Escucha más música en Spotify!</p>
+            </>
+          )}
         </section>
-      ) : topSpotifyTracks.length > 0 ? (
-        <section>
-          <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center">
-                <SpotifyIcon className="w-7 h-7 mr-2 text-green-500" /> Tus Top Tracks (Spotify)
-              </h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-6 sm:gap-x-6 sm:gap-y-8">
-            {topSpotifyTracks.map((track) => {
-               const isCurrentlyActiveItem = track.id === currentTrack?.id && track.source === currentTrack?.source;
-              return (
-              <Card key={`${track.source}-${track.id}`} className="group relative overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 bg-card rounded-lg cursor-pointer" onClick={() => handlePlayItem(track)}>
-                  <CardContent className="p-0">
-                      <Image
-                      src={track.artworkUrl}
-                      alt={track.title}
-                      width={300}
-                      height={300}
-                      className="aspect-square object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg"
-                      data-ai-hint={track.dataAiHint || 'song track'}
-                      />
-                  </CardContent>
-                <div className="p-3">
-                  <CardTitle className="text-sm font-semibold truncate text-foreground">{track.title}</CardTitle>
-                  <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-                </div>
-                 <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute bottom-[calc(25%+0.75rem)] right-3 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full h-10 w-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-1/2 group-hover:translate-y-0"
-                    onClick={(e) => handlePlayItem(track, e)}
-                    aria-label={`Play ${track.title}`}
-                  >
-                    {(isCurrentlyActiveItem && isPlaying) ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
-                  </Button>
-              </Card>
-              );
-            })}
-          </div>
-        </section>
-      ) : (
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-4">Tus Top Tracks (Spotify)</h2>
-          <p className="text-muted-foreground">No hay top tracks para mostrar. ¡Escucha más música en Spotify!</p>
-        </section>
-      )}
 
-      <div className="fixed bottom-28 right-6 md:bottom-6 md:right-6 z-50">
-        <div className="bg-card/70 backdrop-blur-sm text-xs text-muted-foreground px-3 py-1.5 rounded-full shadow-lg border border-border/50 flex items-center gap-1.5">
-            <span>Potenciado por</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12.55 2.755a.5.5 0 0 0-.9 0l-2 4A.5.5 0 0 0 10 7.5h4a.5.5 0 0 0 .35-.855l-2-4Z"/><path d="M17 11h-2a1 1 0 0 0-1 1v2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V12a1 1 0 0 0-1-1Z"/><path d="m7 11-2.5 2.5a1.5 1.5 0 0 0 0 2.121L7 18"/><path d="M14.5 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>
-            <span>Genkit</span>
+        {/* Genkit Badge - Re-styled to fit better */}
+        <div className="px-4 md:px-6 pb-4">
+            <div className="flex justify-center md:justify-end mt-8">
+                 <div className="bg-card/60 backdrop-blur-sm text-xs text-muted-foreground px-3 py-1.5 rounded-full shadow-lg border border-border/50 flex items-center gap-1.5">
+                    <span>Potenciado por</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M12.55 2.755a.5.5 0 0 0-.9 0l-2 4A.5.5 0 0 0 10 7.5h4a.5.5 0 0 0 .35-.855l-2-4Z"/><path d="M17 11h-2a1 1 0 0 0-1 1v2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V12a1 1 0 0 0-1-1Z"/><path d="m7 11-2.5 2.5a1.5 1.5 0 0 0 0 2.121L7 18"/><path d="M14.5 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>
+                    <span>Genkit</span>
+                </div>
+            </div>
         </div>
       </div>
     </div>
   );
 }
-
     
