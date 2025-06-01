@@ -26,7 +26,7 @@ export function MusicList({ type }: MusicListProps) {
       {items.map((item) => (
         <Link
           key={item.id}
-          href={`/app/player/${item.id}`} // Assuming player page is under /app route group for consistency
+          href={`/player/${item.id}`} // Assuming this route resolves correctly within the app group
           className="group relative rounded-md overflow-hidden transition-all duration-300 hover:scale-105"
         >
           <div className="aspect-square relative">
