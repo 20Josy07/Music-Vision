@@ -2,14 +2,14 @@
 "use client";
 
 import Image from 'next/image';
-import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, ChevronLeft, MoreVertical, ChevronUp, Music2 } from 'lucide-react'; // Added ChevronLeft, MoreVertical, ChevronUp
+import { X, Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, ChevronLeft, MoreVertical, ChevronUp, Music2 } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { LyricsDisplay } from '@/components/lyrics/LyricsDisplay';
 import { useEffect, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // For artist avatar
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -36,7 +36,7 @@ export function FullScreenPlayer() {
 
   const [displayProgress, setDisplayProgress] = useState(playbackProgress);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [lyricsViewActive, setLyricsViewActive] = useState(false); // To toggle between album art and lyrics view
+  const [lyricsViewActive, setLyricsViewActive] = useState(false);
 
   useEffect(() => {
     if (!isSeeking) {
@@ -44,7 +44,6 @@ export function FullScreenPlayer() {
     }
   }, [playbackProgress, isSeeking]);
 
-  // Reset to album art view when track changes
   useEffect(() => {
     setLyricsViewActive(false);
   }, [currentTrack?.id]);
@@ -73,7 +72,7 @@ export function FullScreenPlayer() {
       {backgroundImageSrc && (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <Image
-            key={backgroundImageSrc} // Re-trigger animation on change
+            key={backgroundImageSrc}
             src={backgroundImageSrc}
             alt="Dynamic background artwork"
             fill
@@ -87,7 +86,6 @@ export function FullScreenPlayer() {
       )}
       <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/40 to-black/50 md:from-black/20 md:via-black/30 md:to-black/40"></div>
 
-      {/* Header */}
       <div className="relative z-20 w-full flex justify-between items-center p-4 pt-5 md:p-6">
         <Button
           variant="ghost"
@@ -109,34 +107,35 @@ export function FullScreenPlayer() {
         </Button>
       </div>
 
-      {/* Main Content Area */}
       <div className="relative z-10 flex flex-col flex-grow w-full max-w-4xl mx-auto items-stretch overflow-hidden px-4 md:px-6 lg:px-8 pb-4 md:pb-6">
         {!lyricsViewActive ? (
           // Album Art View
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="w-full max-w-sm sm:max-w-md md:max-w-lg aspect-square relative shadow-2xl rounded-lg overflow-hidden mb-6 mt-auto">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md aspect-square relative shadow-2xl rounded-lg overflow-hidden mb-6">
               {currentTrack.artworkUrl && (
                 <Image
                   src={currentTrack.artworkUrl}
                   alt={currentTrack.title}
                   fill
-                  sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, 512px"
-                  className="object-cover" // Changed to cover for better fit in square
+                  sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, 448px" // Adjusted sizes based on new max-w
+                  className="object-cover"
                   data-ai-hint={currentTrack.dataAiHint || 'album art'}
                 />
               )}
             </div>
-            <div className="w-full max-w-md px-2 md:px-0 text-center mt-2">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Avatar className="h-5 w-5">
-                    <AvatarImage src={currentTrack.artworkUrl} alt={currentTrack.artist} />
-                    <AvatarFallback>{currentTrack.artist?.substring(0,1) || 'A'}</AvatarFallback>
-                </Avatar>
-                <h2 className="text-xl sm:text-2xl truncate text-primary-foreground font-bold">{currentTrack.title}</h2>
+            <div className="w-full max-w-md px-2 md:px-0 text-center mt-2 space-y-4">
+              <div> {/* Group for title/artist */}
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Avatar className="h-5 w-5">
+                      <AvatarImage src={currentTrack.artworkUrl} alt={currentTrack.artist} />
+                      <AvatarFallback>{currentTrack.artist?.substring(0,1) || 'A'}</AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-xl sm:text-2xl truncate text-primary-foreground font-bold">{currentTrack.title}</h2>
+                </div>
+                <p className="text-sm sm:text-base text-primary-foreground/70 truncate">{currentTrack.artist}</p>
               </div>
-              <p className="text-sm sm:text-base text-primary-foreground/70 truncate mb-4">{currentTrack.artist}</p>
 
-              <div className="flex items-center gap-2 w-full mb-3">
+              <div className="flex items-center gap-2 w-full">
                 <span className="text-xs text-primary-foreground/80 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
                 <Slider
                   value={[displayProgress]} max={1} step={0.01}
@@ -214,14 +213,9 @@ export function FullScreenPlayer() {
                     </Button>
                 </div>
             </div>
-            {/* <Button variant="ghost" onClick={() => setLyricsViewActive(false)} className="mt-2 text-xs text-primary-foreground/60 hover:text-primary-foreground">
-              Show Album Art
-            </Button> */}
           </div>
         )}
       </div>
     </div>
   );
 }
-
-    
