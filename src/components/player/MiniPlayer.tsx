@@ -1,99 +1,171 @@
 
-"use client";
-import type React from 'react';
-import Image from 'next/image';
-import { Play, Pause, SkipForward, Heart, Maximize2 } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { usePlayer } from '@/contexts/PlayerContext';
+"use client"
 
-function formatTime(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-}
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Repeat,
+  Shuffle,
+  Volume2,
+  Maximize2,
+  Heart,
+  MoreHorizontal,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 
 export function MiniPlayer() {
-  const { 
-    currentTrack, 
-    isPlaying, 
-    togglePlayPause, 
-    playNext, 
-    playbackProgress, 
-    toggleFullScreenPlayer 
-  } = usePlayer();
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [currentTime, setCurrentTime] = useState(18)
+  const [duration] = useState(213) // 3:33
+  const [isLiked, setIsLiked] = useState(false)
 
-  if (!currentTrack) {
-    return (
-      <footer className="h-24 bg-gradient-to-r from-gray-800 via-gray-900 to-black text-foreground border-t border-gray-700 flex items-center justify-center px-6">
-        <p className="text-sm text-gray-400">No music selected.</p>
-      </footer>
-    );
+  const currentSong = {
+    id: "1",
+    title: "Hiekka",
+    artist: "Nicky Jam, Beéle",
+    cover: "https://placehold.co/64x64.png", // Using placehold.co for consistency
+    dataAiHint: "song abstract"
   }
-  
-  const totalDuration = currentTrack?.duration || 0;
-  const currentTime = playbackProgress * totalDuration;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+  }
 
   return (
-    <footer className="h-24 bg-gradient-to-r from-gray-800 via-gray-900 to-black text-foreground border-t border-gray-700 flex items-center justify-between px-6 relative">
-      {/* Thin Progress Bar at the top */}
-      <div className="absolute top-0 left-0 right-0 h-1">
-        <Slider
-            value={[playbackProgress]}
-            max={1}
-            step={0.01}
-            className="w-full h-1 [&>span]:h-1 [&>span>span]:bg-emerald-500 [&>span]:bg-gray-600"
-            thumbClassName="h-1 w-1 hidden"
-            aria-label="Playback progress"
-        />
-      </div>
+    <div className="h-24 bg-black/30 backdrop-blur-2xl border-t border-white/10 flex items-center justify-between px-6 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 via-transparent to-emerald-900/20 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500"></div>
 
-      {/* Left: Track Info */}
-      <div className="flex items-center gap-4 w-1/3">
-        <Image 
-            src={currentTrack.artworkUrl || 'https://placehold.co/64x64.png'} 
-            alt={currentTrack.title} 
-            width={56} height={56} 
-            className="rounded-md shadow-md"
-            data-ai-hint={currentTrack.dataAiHint || "album art"}
-        />
-        <div>
-          <h3 className="font-semibold text-sm truncate">{currentTrack.title}</h3>
-          <p className="text-xs text-gray-400 truncate">{currentTrack.artist}</p>
+      <div className="relative z-10 flex items-center justify-between w-full">
+        {/* Song Info */}
+        <div className="flex items-center gap-4 w-80">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg">
+            <Image
+              src={currentSong.cover || "https://placehold.co/64x64/cccccc/969696.png?text=Art"}
+              alt={currentSong.title}
+              fill
+              className="object-cover"
+              data-ai-hint={currentSong.dataAiHint}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-bold text-white truncate">{currentSong.title}</h4>
+            <p className="text-sm text-gray-400 truncate">{currentSong.artist}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`text-gray-400 hover:text-red-400 transition-all duration-300 ${isLiked ? "text-red-500" : ""}`}
+              onClick={() => setIsLiked(!isLiked)}
+            >
+              <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white transition-all duration-300">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Center: Player Controls */}
-      <div className="flex flex-col items-center gap-1 w-1/3">
-        <div className="flex items-center gap-3">
-            {/* Add Previous button if needed later */}
-            <Button variant="ghost" size="icon" onClick={togglePlayPause} className="h-10 w-10 text-white hover:text-gray-300">
-            {isPlaying ? <Pause className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current" />}
+        {/* Controls */}
+        <div className="flex flex-col items-center gap-3 flex-1 max-w-2xl">
+          <div className="flex items-center gap-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+            >
+              <Shuffle className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={playNext} className="h-8 w-8 text-gray-400 hover:text-white">
-            <SkipForward className="h-5 w-5 fill-current" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:text-gray-300 hover:bg-white/10 rounded-lg transition-all duration-300"
+            >
+              <SkipBack className="w-5 h-5 fill-current" />
             </Button>
-        </div>
-        <div className="flex items-center gap-2 text-xs w-full max-w-xs text-gray-400">
-            <span>{formatTime(currentTime)}</span>
-            {/* Simplified progress or remove if top bar is enough */}
-            <div className="flex-grow h-1 bg-gray-600 rounded-full">
-                <div className="h-1 bg-emerald-500 rounded-full" style={{ width: `${playbackProgress * 100}%` }}></div>
+            <Button
+              onClick={() => setIsPlaying(!isPlaying)}
+              size="icon"
+              className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-105"
+            >
+              {isPlaying ? (
+                <Pause className="w-5 h-5 fill-current" />
+              ) : (
+                <Play className="w-5 h-5 fill-current ml-0.5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:text-gray-300 hover:bg-white/10 rounded-lg transition-all duration-300"
+            >
+              <SkipForward className="w-5 h-5 fill-current" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+            >
+              <Repeat className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-3 w-full">
+            <span className="text-xs text-gray-400 w-12 text-right font-mono">{formatTime(currentTime)}</span>
+            <div className="flex-1 relative">
+              <Slider
+                value={[currentTime]}
+                max={duration}
+                step={1}
+                className="cursor-pointer [&>span]:h-1.5 [&>span]:bg-neutral-600 [&>span>span]:bg-gradient-to-r [&>span>span]:from-blue-500 [&>span>span]:via-cyan-500 [&>span>span]:to-emerald-500"
+                thumbClassName="h-3 w-3 border-transparent bg-white"
+                onValueChange={(value) => setCurrentTime(value[0])}
+              />
             </div>
-            <span>{formatTime(totalDuration)}</span>
+            <span className="text-xs text-gray-400 w-12 font-mono">{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        {/* Volume & Actions */}
+        <div className="flex items-center gap-3 w-80 justify-end">
+          <Link href={`/player/${currentSong.id}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </Button>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+          >
+            <Volume2 className="w-4 h-4" />
+          </Button>
+          <div className="w-28">
+            <Slider 
+              defaultValue={[70]} 
+              max={100} 
+              step={1} 
+              className="cursor-pointer [&>span]:h-1.5 [&>span]:bg-neutral-600 [&>span>span]:bg-white"
+              thumbClassName="h-3 w-3 border-transparent bg-white"
+            />
+          </div>
         </div>
       </div>
-
-      {/* Right: Actions & Volume */}
-      <div className="flex items-center gap-3 w-1/3 justify-end">
-        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-          <Heart className="h-5 w-5" />
-        </Button>
-        {/* Volume control can be added here */}
-        <Button variant="ghost" size="icon" onClick={toggleFullScreenPlayer} className="text-gray-400 hover:text-white">
-          <Maximize2 className="h-5 w-5" />
-        </Button>
-      </div>
-    </footer>
-  );
+    </div>
+  )
 }
